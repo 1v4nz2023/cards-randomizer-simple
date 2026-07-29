@@ -1,3 +1,5 @@
+const API_BASE = 'https://proyectosmera.site/cards/api/deck'
+
 const generateBtn = document.getElementById('generateBtn')
 const downloadBtn = document.getElementById('downloadBtn')
 const loadingEl = document.getElementById('loading')
@@ -19,7 +21,7 @@ generateBtn.addEventListener('click', async () => {
   downloadBtn.disabled = true
 
   try {
-    const response = await fetch('/api/deck')
+    const response = await fetch(`${API_BASE}`)
     const result = await response.json()
 
     if (!result.success) {
@@ -40,7 +42,7 @@ generateBtn.addEventListener('click', async () => {
 })
 
 downloadBtn.addEventListener('click', () => {
-  window.open('/api/deck/ydk', '_blank')
+  window.open(`${API_BASE}/ydk`, '_blank')
 })
 
 function renderDeck(data) {
