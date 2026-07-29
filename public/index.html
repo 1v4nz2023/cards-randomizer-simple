@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yu-Gi-Oh! Random Deck Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Yu-Gi-Oh! Random Deck Generator</h1>
+      <p class="subtitle">Genera decks aleatorios con cartas de cards.json</p>
+    </header>
+
+    <div class="controls">
+      <button id="generateBtn" class="btn btn-primary">Generar Deck</button>
+      <button id="downloadBtn" class="btn btn-secondary" disabled>Descargar YDK</button>
+    </div>
+
+    <div id="deckInfo" class="deck-info hidden">
+      <span id="mainCount">Main Deck: 0 cartas</span>
+      <span id="extraCount">Extra Deck: 0 cartas</span>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Generando deck...</p>
+    </div>
+
+    <main id="deckDisplay" class="deck-display hidden">
+      <section class="deck-section">
+        <h2>Main Deck</h2>
+        <div id="mainDeckCards" class="card-grid"></div>
+      </section>
+
+      <section class="deck-section">
+        <h2>Extra Deck</h2>
+        <div id="extraDeckCards" class="card-grid"></div>
+      </section>
+    </main>
+
+    <div id="error" class="error hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

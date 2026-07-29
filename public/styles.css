@@ -1,0 +1,263 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0a0a1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  text-align: center;
+  padding: 30px 0;
+}
+
+header h1 {
+  font-size: 2rem;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.btn {
+  padding: 12px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  color: #1a1a2e;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #4a4a6a, #3a3a5a);
+  color: #e0e0e0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(74, 74, 106, 0.4);
+}
+
+.deck-info {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.deck-info span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffd700;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 215, 0, 0.2);
+  border-top-color: #ffd700;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: #888;
+}
+
+.deck-display {
+  margin-top: 24px;
+}
+
+.deck-section {
+  margin-bottom: 32px;
+}
+
+.deck-section h2 {
+  font-size: 1.3rem;
+  color: #ffd700;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.card-container {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.card-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.card-container img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 59/86;
+  object-fit: cover;
+  display: block;
+}
+
+.card-container .card-name {
+  padding: 8px;
+  font-size: 0.7rem;
+  text-align: center;
+  color: #ccc;
+  line-height: 1.3;
+  max-height: 3.9em;
+  overflow: hidden;
+}
+
+.card-container .card-type-label {
+  padding: 0 8px 8px;
+  font-size: 0.6rem;
+  text-align: center;
+  color: #666;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.error {
+  text-align: center;
+  padding: 16px;
+  margin: 16px 0;
+  background: rgba(255, 50, 50, 0.1);
+  border: 1px solid rgba(255, 50, 50, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+}
+
+/* Modal for card preview */
+.card-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.card-modal.active {
+  display: flex;
+}
+
+.card-modal-content {
+  max-width: 400px;
+  text-align: center;
+}
+
+.card-modal-content img {
+  max-width: 300px;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+}
+
+.card-modal-content .modal-name {
+  margin-top: 16px;
+  font-size: 1.2rem;
+  color: #ffd700;
+}
+
+.card-modal-content .modal-type {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.card-modal-content .modal-close {
+  margin-top: 16px;
+  padding: 8px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 200px;
+  }
+}
