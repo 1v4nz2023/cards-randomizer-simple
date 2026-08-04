@@ -10,6 +10,9 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 5000
 
+// Store the last generated deck to reuse for YDK download
+let lastGeneratedDeck = null
+
 function generateRandomFilename() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
   let name = ''
@@ -44,6 +47,8 @@ try {
 app.get('/api/deck', (req, res) => {
   try {
     const deck = buildDeck(cardPools)
+    // Store the deck for reuse in YDK download
+    lastGeneratedDeck = deck
 
     // Format cards for the frontend (include image URLs)
     const formatCard = (card) => ({
@@ -70,10 +75,10 @@ app.get('/api/deck', (req, res) => {
   }
 })
 
-// GET /api/deck/ydk - Return YDK file content
+// GET /api/deck/ydk - Return YDK file content using the last generated deck
 app.get('/api/deck/ydk', (req, res) => {
   try {
-    const deck = buildDeck(cardPools)
+    const deck = lastGeneratedDeck || buildDeck(cardPools)
     const ydkContent = generateYdkContent(deck)
     res.set('Content-Type', 'text/plain')
     res.set('Content-Disposition', `attachment; filename="${generateRandomFilename()}"`)
