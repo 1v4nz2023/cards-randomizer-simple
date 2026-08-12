@@ -1,4 +1,5 @@
-const getDeckApiUrl = () => `${window.API_BASE || '/api'}/deck`
+const API_BASE = window.API_BASE || (window.location.pathname.includes('/cards/') ? '/cards/api' : '/api')
+const getDeckApiUrl = () => `${API_BASE}/deck`
 
 const generateBtn = document.getElementById('generateBtn')
 const downloadBtn = document.getElementById('downloadBtn')

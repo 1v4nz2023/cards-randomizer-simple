@@ -374,7 +374,7 @@ function renderDeckColumns() {
 // Fetch Binder Inventory
 async function fetchBinderDrawer() {
   try {
-    const res = await fetch('/api/inventory', {
+    const res = await fetch(`${API_BASE}/inventory`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
