@@ -897,7 +897,14 @@ function openCardZoomModal(item) {
   const codeStr = item.card_code || item.set_name ? ` (${item.card_code || item.set_name})` : ''
   if (zoomCardMeta) zoomCardMeta.textContent = `${typeStr}${attrStr}${raceStr}${codeStr}`
 
-  if (zoomCardDesc) zoomCardDesc.textContent = item.desc || item.description || item.notes || 'Sin descripción disponible.'
+  let cardDesc = item.desc || item.description || ''
+  if (!cardDesc && item.notes && !item.notes.toLowerCase().includes('importado')) {
+    cardDesc = item.notes
+  }
+  if (!cardDesc) {
+    cardDesc = 'Sin descripción disponible.'
+  }
+  if (zoomCardDesc) zoomCardDesc.textContent = cardDesc
 
   if (closeCardZoomModalBtn) closeCardZoomModalBtn.onclick = () => cardZoomModal.classList.add('hidden')
   cardZoomModal.onclick = (e) => {

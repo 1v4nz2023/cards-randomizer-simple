@@ -8,6 +8,7 @@ import {
   deleteInventoryCard,
 } from './inventoryModel.js'
 import { searchCardsByName, searchCardsAdvanced, findCardById } from './cardSearch.js'
+import { getInventoryCardAvailability } from '../decks/deckModel.js'
 
 const router = Router()
 
@@ -22,6 +23,7 @@ function formatEnrichedItem(item, cardDetails = {}) {
     humanReadableCardType: cardDetails.humanReadableCardType || cardDetails.type || '',
     attribute: cardDetails.attribute || '',
     race: cardDetails.race || '',
+    desc: cardDetails.desc || cardDetails.description || '',
     archetype: cardDetails.archetype || '',
     level: cardDetails.level || null,
     atk: cardDetails.atk !== undefined ? cardDetails.atk : null,
@@ -38,8 +40,8 @@ router.get('/search', async (req, res) => {
     const matches = await searchCardsAdvanced(req.query, 35)
     res.json({ success: true, data: matches })
   } catch (err) {
-    console.error('Error searching catalog:', err)
-    res.status(500).json({ success: false, error: 'Error al buscar en el catálogo.' })
+    console.error('Error in card search API:', err)
+    res.status(500).json({ success: false, error: 'Error en la búsqueda de cartas.' })
   }
 })
 
@@ -92,11 +94,21 @@ router.get('/', async (req, res) => {
   try {
     const rawItems = await getInventoryByUser(req.user.id)
 
-    // Enrich inventory items with card catalog details (name, image, type, attribute, race, level)
+    // Enrich inventory items with card catalog details and deck availability
     const enrichedItems = await Promise.all(
       rawItems.map(async (item) => {
         const cardDetails = (await findCardById(item.card_id)) || {}
-        return formatEnrichedItem(item, cardDetails)
+        const availability = (await getInventoryCardAvailability(item.id, req.user.id)) || {
+          assigned_copies: 0,
+          available_quantity: item.quantity || 1,
+          location_summary: 'Binder'
+        }
+        return {
+          ...formatEnrichedItem(item, cardDetails),
+          assigned_copies: availability.assigned_copies,
+          available_quantity: availability.available_quantity,
+          location_summary: availability.location_summary
+        }
       })
     )
 
@@ -123,6 +135,20 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error('Error fetching inventory item:', err)
     res.status(500).json({ success: false, error: 'Error al obtener la carta.' })
+  }
+})
+
+// GET /api/inventory/:id/availability - Get card availability & location tags
+router.get('/:id/availability', async (req, res) => {
+  try {
+    const availability = await getInventoryCardAvailability(req.params.id, req.user.id)
+    if (!availability) {
+      return res.status(404).json({ success: false, error: 'Carta no encontrada.' })
+    }
+    res.json({ success: true, data: availability })
+  } catch (err) {
+    console.error('Error getting availability:', err)
+    res.status(500).json({ success: false, error: 'Error al obtener la disponibilidad.' })
   }
 })
 

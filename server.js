@@ -6,12 +6,24 @@ import { buildDeck, generateYdkContent } from './src/deckBuilder.js'
 import { initDb } from './src/db.js'
 import authRoutes from './src/auth/authRoutes.js'
 import inventoryRoutes from './src/inventory/inventoryRoutes.js'
+import deckRoutes from './src/decks/deckRoutes.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 5000
+
+// Enable CORS & Auth Headers for production reverse proxies
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-access-token')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
+  }
+  next()
+})
 
 // Parse JSON request bodies
 app.use(express.json())
@@ -22,6 +34,7 @@ app.use(express.static(join(__dirname, 'public')))
 // Mount API routes
 app.use('/api/auth', authRoutes)
 app.use('/api/inventory', inventoryRoutes)
+app.use('/api/decks', deckRoutes)
 
 // Load and classify cards once at startup
 let cardPools
@@ -48,12 +61,17 @@ app.get('/api/deck', (req, res) => {
     // Store the deck for reuse in YDK download
     lastGeneratedDeck = deck
 
-    // Format cards for the frontend (include image URLs)
+    // Format cards for the frontend (include image URLs, desc, attributes)
     const formatCard = (card) => ({
       id: card.id,
       name: card.name,
       type: card.type,
       humanReadableCardType: card.humanReadableCardType,
+      desc: card.desc || card.description || '',
+      attribute: card.attribute || '',
+      race: card.race || '',
+      atk: card.atk !== undefined ? card.atk : null,
+      def: card.def !== undefined ? card.def : null,
       imageSmall: card.card_images?.[0]?.image_url_small || '',
       imageFull: card.card_images?.[0]?.image_url || '',
     })
