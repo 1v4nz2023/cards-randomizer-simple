@@ -1,5 +1,6 @@
-// Dynamic API Base helper
-const getInventoryApiUrl = (path = '') => `${window.API_BASE || '/api'}/inventory${path}`
+// Dynamic API Base helper (supports subpath deployments like /cards/)
+const API_BASE = window.API_BASE || (window.location.pathname.includes('/cards/') ? '/cards/api' : '/api')
+const getInventoryApiUrl = (path = '') => `${API_BASE}/inventory${path}`
 
 // Token & Authentication handling (Permite modo libre / invitado si no hay token)
 const token = localStorage.getItem('ygo_token') || ''

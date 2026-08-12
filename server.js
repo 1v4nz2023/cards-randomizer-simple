@@ -31,10 +31,10 @@ app.use(express.json())
 // Serve static files from public/
 app.use(express.static(join(__dirname, 'public')))
 
-// Mount API routes
-app.use('/api/auth', authRoutes)
-app.use('/api/inventory', inventoryRoutes)
-app.use('/api/decks', deckRoutes)
+// Mount API routes (Support both /api and /cards/api for subpath deployments)
+app.use(['/api/auth', '/cards/api/auth'], authRoutes)
+app.use(['/api/inventory', '/cards/api/inventory'], inventoryRoutes)
+app.use(['/api/decks', '/cards/api/decks'], deckRoutes)
 
 // Load and classify cards once at startup
 let cardPools
@@ -55,7 +55,7 @@ try {
 }
 
 // GET /api/deck - Generate and return a new deck
-app.get('/api/deck', (req, res) => {
+app.get(['/api/deck', '/cards/api/deck'], (req, res) => {
   try {
     const deck = buildDeck(cardPools)
     // Store the deck for reuse in YDK download
@@ -92,7 +92,7 @@ app.get('/api/deck', (req, res) => {
 })
 
 // GET /api/deck/ydk - Return YDK file content using the last generated deck
-app.get('/api/deck/ydk', (req, res) => {
+app.get(['/api/deck/ydk', '/cards/api/deck/ydk'], (req, res) => {
   try {
     const deck = lastGeneratedDeck || buildDeck(cardPools)
     const ydkContent = generateYdkContent(deck)

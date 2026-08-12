@@ -2,8 +2,9 @@
 const token = localStorage.getItem('ygo_token') || ''
 const currentUser = JSON.parse(localStorage.getItem('ygo_user') || 'null') || { id: 1, email: 'invitado@proyectosmera.site' }
 
-function getApiUrl(path) {
-  return `/api/decks${path}`
+const API_BASE = window.API_BASE || (window.location.pathname.includes('/cards/') ? '/cards/api' : '/api')
+function getApiUrl(path = '') {
+  return `${API_BASE}/decks${path}`
 }
 
 // User Avatar Header
