@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Binder Yu-Gi-Oh! | Inventario</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-top">
+        <a href="index.html" class="nav-brand">⚡ YGO Randomizer</a>
+        <div class="user-avatar-wrap">
+          <button id="userAvatarBtn" class="user-avatar-btn" title="Perfil">
+            <span id="userInitials">--</span>
+          </button>
+          <div id="userDropdown" class="user-dropdown hidden">
+            <div id="userDropdownEmail" class="dropdown-email"></div>
+            <button id="logoutBtn" class="dropdown-logout-btn">🚪 Cerrar Sesión</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <a href="index.html" class="nav-tab">Decks</a>
+        <a href="inventory.html" class="nav-tab active">Mi Binder</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header class="binder-header">
+      <h1>📁 Mi Binder de Yu-Gi-Oh!</h1>
+      <p class="subtitle">Gestiona tu colección física de cartas, carpetas, hojas y condiciones.</p>
+    </header>
+
+    <!-- Metrics Dashboard -->
+    <div class="dashboard-grid">
+      <div class="stat-card">
+        <div class="stat-icon-box">🃏</div>
+        <div class="stat-info">
+          <span id="totalCardsCount" class="stat-value">0</span>
+          <span class="stat-label">Cartas físicas totales</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box">✨</div>
+        <div class="stat-info">
+          <span id="uniqueCardsCount" class="stat-value">0</span>
+          <span class="stat-label">Modelos únicos</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box">📖</div>
+        <div class="stat-info">
+          <span id="totalPagesCount" class="stat-value">0</span>
+          <span class="stat-label">Páginas usadas</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box">🔮</div>
+        <div class="stat-info">
+          <span id="extraDeckCount" class="stat-value">0</span>
+          <span class="stat-label">Extra Deck</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box">📜</div>
+        <div class="stat-info">
+          <span id="spellsCount" class="stat-value">0</span>
+          <span class="stat-label">Mágicas (Spells)</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box">⚡</div>
+        <div class="stat-info">
+          <span id="trapsCount" class="stat-value">0</span>
+          <span class="stat-label">Trampas (Traps)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action & Filters Bar -->
+    <div class="inventory-toolbar">
+      <div class="toolbar-btn-group">
+        <button id="openAddModalBtn" class="btn btn-add-yellow">+ Añadir carta al binder</button>
+        <button id="openImportYdkModalBtn" class="btn btn-secondary">📥 Importar baraja (.ydk)</button>
+        <button id="exportYdkBtn" class="btn btn-secondary">📤 Exportar binder (.ydk)</button>
+      </div>
+
+      <div class="search-filter-box">
+        <input type="text" id="filterSearchInput" placeholder="🔍 Buscar por nombre, ID o código..." class="form-control-dark">
+      </div>
+
+      <div class="filter-dropdowns-row">
+        <select id="filterTypeSelect" class="form-control-dark">
+          <option value="">Todos los tipos</option>
+          <option value="Spell Card">📜 Mágica (Spell Card)</option>
+          <option value="Trap Card">⚡ Trampa (Trap Card)</option>
+          <option value="Effect Monster">Effect Monster</option>
+          <option value="Normal Monster">Normal Monster</option>
+          <option value="Fusion Monster">Fusion Monster</option>
+          <option value="Synchro Monster">Synchro Monster</option>
+          <option value="XYZ Monster">XYZ Monster</option>
+          <option value="Link Monster">Link Monster</option>
+          <option value="Ritual Monster">Ritual Monster</option>
+          <option value="Pendulum Effect Monster">Pendulum Effect Monster</option>
+          <option value="Normal Tuner Monster">Normal Tuner Monster</option>
+          <option value="Flip Effect Monster">Flip Effect Monster</option>
+          <option value="Toon Monster">Toon Monster</option>
+          <option value="Spirit Monster">Spirit Monster</option>
+          <option value="Union Effect Monster">Union Effect Monster</option>
+          <option value="Gemini Monster">Gemini Monster</option>
+          <option value="Skill Card">Skill Card</option>
+          <option value="Token">Token</option>
+        </select>
+
+        <select id="filterAttributeSelect" class="form-control-dark">
+          <option value="">Todos los atributos</option>
+          <option value="DARK">DARK</option>
+          <option value="LIGHT">LIGHT</option>
+          <option value="EARTH">EARTH</option>
+          <option value="WATER">WATER</option>
+          <option value="FIRE">FIRE</option>
+          <option value="WIND">WIND</option>
+          <option value="DIVINE">DIVINE</option>
+        </select>
+
+        <select id="filterRaceSelect" class="form-control-dark">
+          <option value="">Todas las Razas / Subtipos</option>
+          <optgroup label="Monstruos">
+            <option value="Aqua">Aqua</option>
+            <option value="Beast">Beast</option>
+            <option value="Beast-Warrior">Beast-Warrior</option>
+            <option value="Creator-God">Creator-God</option>
+            <option value="Cyberse">Cyberse</option>
+            <option value="Dinosaur">Dinosaur</option>
+            <option value="Divine-Beast">Divine-Beast</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fiend">Fiend</option>
+            <option value="Fish">Fish</option>
+            <option value="Insect">Insect</option>
+            <option value="Machine">Machine</option>
+            <option value="Plant">Plant</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Pyro">Pyro</option>
+            <option value="Reptile">Reptile</option>
+            <option value="Rock">Rock</option>
+            <option value="Sea Serpent">Sea Serpent</option>
+            <option value="Spellcaster">Spellcaster</option>
+            <option value="Thunder">Thunder</option>
+            <option value="Warrior">Warrior</option>
+            <option value="Winged Beast">Winged Beast</option>
+            <option value="Wyrm">Wyrm</option>
+            <option value="Zombie">Zombie</option>
+          </optgroup>
+          <optgroup label="Mágicas / Spells">
+            <option value="Normal">Normal</option>
+            <option value="Field">Field (Campo)</option>
+            <option value="Equip">Equip (Equipo)</option>
+            <option value="Continuous">Continuous (Continua)</option>
+            <option value="Quick-Play">Quick-Play (Juego Rápido)</option>
+            <option value="Ritual">Ritual</option>
+          </optgroup>
+          <optgroup label="Trampas / Traps">
+            <option value="Normal">Normal</option>
+            <option value="Continuous">Continuous (Continua)</option>
+            <option value="Counter">Counter (Contraefecto)</option>
+          </optgroup>
+        </select>
+
+        <select id="filterSetSelect" class="form-control-dark">
+          <option value="">Todos los sets</option>
+        </select>
+
+        <select id="filterPageSelect" class="form-control-dark">
+          <option value="">Todas las páginas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="inventoryLoading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Cargando tu binder...</p>
+    </div>
+
+    <!-- Inventory Cards Grid -->
+    <main id="inventoryGrid" class="inventory-grid"></main>
+
+    <!-- Pagination Bar -->
+    <div id="paginationWrap" class="pagination-wrap hidden">
+      <span id="paginationInfo" class="pagination-info">Mostrando 1-40 de 40 cartas</span>
+      <div class="pagination-controls">
+        <button id="prevPageBtn" class="btn btn-secondary btn-sm" disabled>⬅️ Anterior</button>
+        <span id="paginationPageNum" class="page-num-badge">Hoja / Página 1 de 1</span>
+        <button id="nextPageBtn" class="btn btn-secondary btn-sm" disabled>Siguiente ➡️</button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state hidden">
+      <div class="empty-icon-box">📱</div>
+      <h3>Tu binder está vacío</h3>
+      <p>Comienza a añadir cartas a tu colección con el botón <strong class="highlight-yellow">"Añadir carta al binder"</strong>.</p>
+    </div>
+  </div>
+
+  <!-- Modal 1: Añadir Carta al Binder -->
+  <div id="addCardModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>➕ Añadir carta al binder</h3>
+        <button class="close-modal-btn" id="closeAddModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group search-autocomplete-group">
+          <label>Buscar carta en el catálogo</label>
+          <input type="text" id="cardSearchInput" placeholder="Escribe el nombre, código o arquetipo (ej. Magician, LOB-001)..." autocomplete="off" class="form-control-dark">
+          <div class="search-filter-subrow">
+            <select id="modalSearchType" class="form-control-dark-sm">
+              <option value="">Tipo (Todos)</option>
+              <option value="Spell Card">Mágica (Spell)</option>
+              <option value="Trap Card">Trampa (Trap)</option>
+              <option value="Effect Monster">Monstruo Efecto</option>
+              <option value="Normal Monster">Monstruo Normal</option>
+              <option value="Fusion Monster">Fusión</option>
+              <option value="Synchro Monster">Sincronía</option>
+              <option value="XYZ Monster">XYZ</option>
+              <option value="Link Monster">Link</option>
+              <option value="Ritual Monster">Ritual</option>
+            </select>
+            <select id="modalSearchAttribute" class="form-control-dark-sm">
+              <option value="">Atributo (Todos)</option>
+              <option value="DARK">DARK</option>
+              <option value="LIGHT">LIGHT</option>
+              <option value="EARTH">EARTH</option>
+              <option value="WATER">WATER</option>
+              <option value="FIRE">FIRE</option>
+              <option value="WIND">WIND</option>
+              <option value="DIVINE">DIVINE</option>
+            </select>
+            <select id="modalSearchRace" class="form-control-dark-sm">
+              <option value="">Raza / Subtipo</option>
+              <option value="Spellcaster">Spellcaster</option>
+              <option value="Dragon">Dragon</option>
+              <option value="Warrior">Warrior</option>
+
+              <option value="Fiend">Fiend</option>
+              <option value="Fairy">Fairy</option>
+              <option value="Machine">Machine</option>
+              <option value="Zombie">Zombie</option>
+              <option value="Cyberse">Cyberse</option>
+              <option value="Quick-Play">Juego Rápido</option>
+              <option value="Continuous">Continua</option>
+              <option value="Counter">Contraefecto</option>
+              <option value="Field">Campo</option>
+              <option value="Equip">Equipo</option>
+            </select>
+            <select id="modalSearchLevel" class="form-control-dark-sm">
+              <option value="">Nivel / Rango</option>
+              <option value="lte4">Nivel ≤ 4</option>
+              <option value="4">Nivel = 4</option>
+              <option value="gte5">Nivel ≥ 5</option>
+              <option value="gte8">Nivel ≥ 8</option>
+            </select>
+          </div>
+          <div id="autocompleteResults" class="autocomplete-dropdown hidden"></div>
+        </div>
+
+        <div id="selectedCardPreview" class="selected-card-preview hidden">
+          <img id="previewImage" src="" alt="Vista previa">
+          <div class="preview-info">
+            <h4 id="previewName"></h4>
+            <span id="previewType" class="badge badge-type"></span>
+          </div>
+        </div>
+
+        <form id="addCardForm" class="hidden">
+          <input type="hidden" id="addCardId">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addSetSelect">Edición / Set</label>
+              <select id="addSetSelect" class="form-control-dark"></select>
+            </div>
+            <div class="form-group">
+              <label for="addRarity">Rareza</label>
+              <input type="text" id="addRarity" placeholder="ej. Ultra Rare" class="form-control-dark">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addCardCode">Código de Set</label>
+              <input type="text" id="addCardCode" placeholder="ej. LOB-001" class="form-control-dark">
+            </div>
+            <div class="form-group">
+              <label for="addQuantity">Cantidad</label>
+              <input type="number" id="addQuantity" value="1" min="1" max="99" class="form-control-dark" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addCondition">Estado / Condición</label>
+              <select id="addCondition" class="form-control-dark">
+                <option value="Near Mint">Near Mint (NM)</option>
+                <option value="Lightly Played">Lightly Played (LP)</option>
+                <option value="Moderately Played">Moderately Played (MP)</option>
+                <option value="Heavily Played">Heavily Played (HP)</option>
+                <option value="Damaged">Damaged (D)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addBinderPage">Página del binder</label>
+              <input type="number" id="addBinderPage" placeholder="ej. 1" min="1" class="form-control-dark">
+            </div>
+            <div class="form-group">
+              <label for="addBinderSlot">Slot (1-9)</label>
+              <input type="number" id="addBinderSlot" placeholder="ej. 5" min="1" max="9" class="form-control-dark">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="addNotes">Notas / Comentarios (opcional)</label>
+            <textarea id="addNotes" placeholder="ej. Primera edición, firmada, etc." rows="2" class="form-control-dark"></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="cancelAddBtn" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" class="btn btn-add-yellow">Guardar en mi binder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Editar Carta de Binder -->
+  <div id="editCardModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✏️ Editar carta en binder</h3>
+        <button class="close-modal-btn" id="closeEditModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="selected-card-preview">
+          <img id="editPreviewImage" src="" alt="Vista previa">
+          <div class="preview-info">
+            <h4 id="editPreviewName"></h4>
+            <span id="editPreviewType" class="badge badge-type"></span>
+          </div>
+        </div>
+
+        <form id="editCardForm">
+          <input type="hidden" id="editInventoryId">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editSetName">Edición / Set</label>
+              <input type="text" id="editSetName" placeholder="ej. Legend of Blue Eyes" class="form-control-dark">
+            </div>
+            <div class="form-group">
+              <label for="editRarity">Rareza</label>
+              <input type="text" id="editRarity" placeholder="ej. Ultra Rare" class="form-control-dark">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editCardCode">Código de Set</label>
+              <input type="text" id="editCardCode" placeholder="ej. LOB-001" class="form-control-dark">
+            </div>
+            <div class="form-group">
+              <label for="editQuantity">Cantidad</label>
+              <input type="number" id="editQuantity" min="1" max="99" class="form-control-dark" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editCondition">Estado / Condición</label>
+              <select id="editCondition" class="form-control-dark">
+                <option value="Near Mint">Near Mint (NM)</option>
+                <option value="Lightly Played">Lightly Played (LP)</option>
+                <option value="Moderately Played">Moderately Played (MP)</option>
+                <option value="Heavily Played">Heavily Played (HP)</option>
+                <option value="Damaged">Damaged (D)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editBinderPage">Página del binder</label>
+              <input type="number" id="editBinderPage" placeholder="ej. 1" min="1" class="form-control-dark">
+            </div>
+            <div class="form-group">
+              <label for="editBinderSlot">Slot (1-9)</label>
+              <input type="number" id="editBinderSlot" placeholder="ej. 5" min="1" max="9" class="form-control-dark">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editNotes">Notas / Comentarios</label>
+            <textarea id="editNotes" rows="2" class="form-control-dark"></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="cancelEditBtn" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" class="btn btn-add-yellow">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Importar Baraja YDK -->
+  <div id="importYdkModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📥 Importar Baraja (.ydk) al Binder</h3>
+        <button class="close-modal-btn" id="closeImportYdkModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="auth-desc">Subes tu archivo .ydk (de EDOPro, YGOPro, Master Duel, etc.) y todas sus cartas se añadirán automáticamente a tu binder.</p>
+
+        <form id="importYdkForm">
+          <div class="form-group">
+            <label for="ydkFileInput">Seleccionar Archivo .ydk</label>
+            <input type="file" id="ydkFileInput" accept=".ydk,.txt" class="form-control-dark">
+          </div>
+
+          <div class="form-group">
+            <label for="ydkTextarea">O pega el texto del archivo .ydk aquí</label>
+            <textarea id="ydkTextarea" placeholder="#created by...&#10;#main&#10;46986414&#10;80181649&#10;#extra" rows="4" class="form-control-dark"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="importCondition">Estado / Condición</label>
+              <select id="importCondition" class="form-control-dark">
+                <option value="Near Mint">Near Mint (NM)</option>
+                <option value="Lightly Played">Lightly Played (LP)</option>
+                <option value="Moderately Played">Moderately Played (MP)</option>
+                <option value="Heavily Played">Heavily Played (HP)</option>
+                <option value="Damaged">Damaged (D)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="importBinderPage">Página del binder (opcional)</label>
+              <input type="number" id="importBinderPage" placeholder="ej. 1" min="1" class="form-control-dark">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="importNotes">Notas personalizadas</label>
+            <input type="text" id="importNotes" value="Importado desde baraja .ydk" class="form-control-dark">
+          </div>
+
+          <div id="importYdkStatus" class="error hidden"></div>
+
+          <div class="modal-footer">
+            <button type="button" id="cancelImportYdkBtn" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" id="submitImportYdkBtn" class="btn btn-add-yellow">📥 Importar a Mi Binder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="inventoryApp.js"></script>
+</body>
+</html>

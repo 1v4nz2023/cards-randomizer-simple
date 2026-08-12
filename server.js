@@ -3,6 +3,9 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { loadAndClassifyCards } from './src/classifier.js'
 import { buildDeck, generateYdkContent } from './src/deckBuilder.js'
+import { initDb } from './src/db.js'
+import authRoutes from './src/auth/authRoutes.js'
+import inventoryRoutes from './src/inventory/inventoryRoutes.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -10,20 +13,15 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 5000
 
-// Store the last generated deck to reuse for YDK download
-let lastGeneratedDeck = null
-
-function generateRandomFilename() {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  let name = ''
-  for (let i = 0; i < 8; i++) {
-    name += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return `${name}.ydk`
-}
+// Parse JSON request bodies
+app.use(express.json())
 
 // Serve static files from public/
 app.use(express.static(join(__dirname, 'public')))
+
+// Mount API routes
+app.use('/api/auth', authRoutes)
+app.use('/api/inventory', inventoryRoutes)
 
 // Load and classify cards once at startup
 let cardPools
@@ -89,12 +87,30 @@ app.get('/api/deck/ydk', (req, res) => {
   }
 })
 
-// GET /api/deck/download - Redirect to YDK download
-app.get('/api/deck/download', (req, res) => {
-  res.redirect('/api/deck/ydk')
-})
+// Store the last generated deck to reuse for YDK download
+let lastGeneratedDeck = null
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`)
-})
+function generateRandomFilename() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  let name = ''
+  for (let i = 0; i < 8; i++) {
+    name += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return `${name}.ydk`
+}
+
+// Start server after DB initialization
+async function startServer() {
+  try {
+    await initDb()
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`)
+    })
+  } catch (err) {
+    console.error('Failed to initialize database:', err)
+    process.exit(1)
+  }
+}
+
+startServer()
+

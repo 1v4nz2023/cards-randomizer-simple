@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso | Yu-Gi-Oh! Binder & Randomizer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">⚡ YGO Randomizer</a>
+      <div class="nav-links">
+        <a href="index.html">Decks</a>
+        <a href="inventory.html">Mi Binder 🎴</a>
+        <a href="login.html" class="active" id="navAuthLink">Iniciar Sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container auth-container">
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button id="tabLogin" class="auth-tab active">Iniciar Sesión</button>
+        <button id="tabRegister" class="auth-tab">Registrarse</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="auth-form">
+        <h2>Bienvenido de nuevo 🃏</h2>
+        <p class="auth-desc">Accede a tu colección personal de cartas Yu-Gi-Oh!</p>
+
+        <div id="loginError" class="error hidden"></div>
+
+        <div class="form-group">
+          <label for="loginEmail">Correo Electrónico</label>
+          <input type="email" id="loginEmail" placeholder="tu@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Entrar a mi Binder</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" class="auth-form hidden">
+        <h2>Crear Cuenta ✨</h2>
+        <p class="auth-desc">Empieza a organizar y gestionar tu binder de cartas hoy</p>
+
+        <div id="registerError" class="error hidden"></div>
+
+        <div class="form-group">
+          <label for="regEmail">Correo Electrónico</label>
+          <input type="email" id="regEmail" placeholder="tu@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Contraseña</label>
+          <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+        </div>
+
+        <div class="form-group">
+          <label for="regPasswordConfirm">Confirmar Contraseña</label>
+          <input type="password" id="regPasswordConfirm" placeholder="Repite tu contraseña" required minlength="6">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Crear mi Cuenta</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const getAuthApiUrl = (path) => `${window.API_BASE || '/api'}/auth${path}`
+
+    // Tab toggle logic for Login/Register
+    const tabLogin = document.getElementById('tabLogin')
+    const tabRegister = document.getElementById('tabRegister')
+    const loginForm = document.getElementById('loginForm')
+    const registerForm = document.getElementById('registerForm')
+    const loginError = document.getElementById('loginError')
+    const registerError = document.getElementById('registerError')
+
+    tabLogin.addEventListener('click', () => {
+      tabLogin.classList.add('active')
+      tabRegister.classList.remove('active')
+      loginForm.classList.remove('hidden')
+      registerForm.classList.add('hidden')
+    })
+
+    tabRegister.addEventListener('click', () => {
+      tabRegister.classList.add('active')
+      tabLogin.classList.remove('active')
+      registerForm.classList.remove('hidden')
+      loginForm.classList.add('hidden')
+    })
+
+    // Check if already logged in
+    const token = localStorage.getItem('ygo_token')
+    if (token) {
+      fetch(getAuthApiUrl('/me'), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = 'inventory.html'
+        }
+      })
+    }
+
+    // Handle Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      loginError.classList.add('hidden')
+
+      const email = document.getElementById('loginEmail').value
+      const password = document.getElementById('loginPassword').value
+
+      try {
+        const res = await fetch(getAuthApiUrl('/login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+        const data = await res.json()
+
+        if (!data.success) {
+          loginError.textContent = data.error || 'Error al iniciar sesión'
+          loginError.classList.remove('hidden')
+          return
+        }
+
+        localStorage.setItem('ygo_token', data.token)
+        localStorage.setItem('ygo_user', JSON.stringify(data.user))
+        window.location.href = 'inventory.html'
+      } catch (err) {
+        loginError.textContent = 'Error de conexión con el servidor.'
+        loginError.classList.remove('hidden')
+      }
+    })
+
+    // Handle Register
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      registerError.classList.add('hidden')
+
+      const email = document.getElementById('regEmail').value
+      const password = document.getElementById('regPassword').value
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value
+
+      if (password !== passwordConfirm) {
+        registerError.textContent = 'Las contraseñas no coinciden.'
+        registerError.classList.remove('hidden')
+        return
+      }
+
+      try {
+        const res = await fetch(getAuthApiUrl('/register'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+        const data = await res.json()
+
+        if (!data.success) {
+          registerError.textContent = data.error || 'Error al registrarse'
+          registerError.classList.remove('hidden')
+          return
+        }
+
+        localStorage.setItem('ygo_token', data.token)
+        localStorage.setItem('ygo_user', JSON.stringify(data.user))
+        window.location.href = 'inventory.html'
+      } catch (err) {
+        registerError.textContent = 'Error de conexión con el servidor.'
+        registerError.classList.remove('hidden')
+      }
+    })
+  </script>
+</body>
+</html>

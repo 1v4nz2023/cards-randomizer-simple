@@ -3,18 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yu-Gi-Oh! Random Deck Generator</title>
+  <title>Yu-Gi-Oh! Random Deck Generator & Binder</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Navigation Header -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-top">
+        <a href="index.html" class="nav-brand">⚡ YGO Randomizer</a>
+        <div class="user-avatar-wrap">
+          <button id="userAvatarBtn" class="user-avatar-btn" title="Perfil">
+            <span id="userInitials">--</span>
+          </button>
+          <div id="userDropdown" class="user-dropdown hidden">
+            <div id="userDropdownEmail" class="dropdown-email"></div>
+            <button id="logoutBtn" class="dropdown-logout-btn">🚪 Cerrar Sesión</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <a href="index.html" class="nav-tab active">Decks</a>
+        <a href="inventory.html" class="nav-tab">Mi Binder</a>
+      </div>
+    </div>
+  </nav>
+
   <div class="container">
     <header>
-      <h1>Yu-Gi-Oh! Random Deck Generator</h1>
-      <p class="subtitle">Genera decks aleatorios con cartas de cards.json</p>
+      <h1>⚡ Yu-Gi-Oh! Random Deck Generator</h1>
+      <p class="subtitle">Genera decks aleatorios y listos para jugar desde el catálogo</p>
     </header>
 
     <div class="controls">
-      <button id="generateBtn" class="btn btn-primary">Generar Deck</button>
+      <button id="generateBtn" class="btn btn-add-yellow">Generar Deck</button>
       <button id="downloadBtn" class="btn btn-secondary" disabled>Descargar YDK</button>
     </div>
 
@@ -43,6 +65,53 @@
     <div id="error" class="error hidden"></div>
   </div>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Avatar toggle & auth state for index.html
+    const token = localStorage.getItem('ygo_token')
+    const userStr = localStorage.getItem('ygo_user')
+    const userAvatarBtn = document.getElementById('userAvatarBtn')
+    const userInitials = document.getElementById('userInitials')
+    const userDropdown = document.getElementById('userDropdown')
+    const userDropdownEmail = document.getElementById('userDropdownEmail')
+    const logoutBtn = document.getElementById('logoutBtn')
+
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        userDropdownEmail.textContent = user.email
+        const parts = user.email.split('@')[0].split(/[._-]/)
+        const initials = parts.length > 1
+          ? (parts[0][0] + parts[1][0]).toUpperCase()
+          : user.email.substring(0, 2).toUpperCase()
+        userInitials.textContent = initials
+      } catch (e) {
+        userInitials.textContent = '👤'
+      }
+    } else {
+      userInitials.textContent = '🔐'
+      userAvatarBtn.onclick = () => window.location.href = 'login.html'
+    }
+
+    userAvatarBtn?.addEventListener('click', (e) => {
+      e.stopPropagation()
+      if (token) {
+        userDropdown.classList.toggle('hidden')
+      } else {
+        window.location.href = 'login.html'
+      }
+    })
+
+    document.addEventListener('click', () => {
+      userDropdown?.classList.add('hidden')
+    })
+
+    logoutBtn?.addEventListener('click', () => {
+      localStorage.removeItem('ygo_token')
+      localStorage.removeItem('ygo_user')
+      window.location.href = 'login.html'
+    })
+  </script>
 </body>
 </html>

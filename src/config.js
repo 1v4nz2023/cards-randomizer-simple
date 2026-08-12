@@ -1,6 +1,6 @@
 // Application constants and configuration
 
-export const CARDS_FILE_PATH = new URL('../data/cards.json', import.meta.url)
+export const CARDS_FILE_PATH = process.env.CARDS_FILE_PATH || new URL('../data/cards.json', import.meta.url)
 
 export const DECK_CONFIG = {
   mainDeck: {
