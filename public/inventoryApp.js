@@ -237,7 +237,8 @@ function populateFilters() {
 
 // Render Inventory Cards Grid (Paginación de 40 cartas por hoja en Desktop)
 function renderInventory() {
-  const searchFilter = (filterSearchInput.value || '').toLowerCase()
+  const searchFilter = (filterSearchInput.value || '').trim().toLowerCase()
+  const normSearchFilter = searchFilter.replace(/[^a-z0-9]/g, '')
   const typeFilter = (filterTypeSelect?.value || '').toLowerCase()
   const attributeFilter = (filterAttributeSelect?.value || '').toLowerCase()
   const raceFilter = (filterRaceSelect?.value || '').toLowerCase()
@@ -245,9 +246,13 @@ function renderInventory() {
   const pageFilter = filterPageSelect.value
 
   const filtered = inventoryData.filter(item => {
+    const cardCode = (item.card_code || '').toLowerCase()
+    const normCode = cardCode.replace(/[^a-z0-9]/g, '')
+
     const matchesSearch = !searchFilter ||
       (item.card_name && item.card_name.toLowerCase().includes(searchFilter)) ||
-      (item.card_code && item.card_code.toLowerCase().includes(searchFilter)) ||
+      (cardCode && cardCode.includes(searchFilter)) ||
+      (normSearchFilter.length >= 3 && normCode && normCode.includes(normSearchFilter)) ||
       (item.set_name && item.set_name.toLowerCase().includes(searchFilter)) ||
       (item.rarity && item.rarity.toLowerCase().includes(searchFilter)) ||
       (item.card_id && String(item.card_id).toLowerCase().includes(searchFilter))

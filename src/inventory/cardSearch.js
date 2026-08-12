@@ -57,7 +57,6 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
   const opts = typeof options === 'string' ? { query: options } : options
 
   const {
-    query = '',
     name = '',
     fname = '',
     id = '',
@@ -78,14 +77,16 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
     sort = '',
   } = opts
 
-  const cleanQuery = (query || fname).trim().toLowerCase()
-  const cleanName = name.trim().toLowerCase()
-  const cleanId = id.trim().toLowerCase()
-  const cleanType = type.trim().toLowerCase()
-  const cleanRace = race.trim().toLowerCase()
-  const cleanAttribute = attribute.trim().toLowerCase()
-  const cleanArchetype = archetype.trim().toLowerCase()
-  const cleanSet = cardset.trim().toLowerCase()
+  const rawQuery = opts.query || opts.q || opts.fname || fname || ''
+  const cleanQuery = rawQuery.trim().toLowerCase()
+  const normQuery = cleanQuery.replace(/[^a-z0-9]/g, '')
+  const cleanName = (name || '').trim().toLowerCase()
+  const cleanId = (id || '').trim().toLowerCase()
+  const cleanType = (type || '').trim().toLowerCase()
+  const cleanRace = (race || '').trim().toLowerCase()
+  const cleanAttribute = (attribute || '').trim().toLowerCase()
+  const cleanArchetype = (archetype || '').trim().toLowerCase()
+  const cleanSet = (cardset || '').trim().toLowerCase()
 
   const catalog = getCardsCatalog()
   const results = []
@@ -100,24 +101,52 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
       continue
     }
 
+    let relevanceScore = 0
+    let matchedSetCode = null
+
     // Query text match (name, id, or set code)
     if (cleanQuery) {
-      const nameMatch = card.name && card.name.toLowerCase().includes(cleanQuery)
-      const idMatch = String(card.id).toLowerCase().includes(cleanQuery)
+      const cName = (card.name || '').toLowerCase()
+      const cId = String(card.id).toLowerCase()
 
-      let setMatch = false
+      const isExactName = cName === cleanQuery
+      const isStartName = cName.startsWith(cleanQuery)
+      const isIncludesName = cName.includes(cleanQuery)
+      const isIdMatch = cId === cleanQuery || cId.includes(cleanQuery)
+
+      let setCodeMatchScore = 0
       if (card.card_sets) {
         for (const s of card.card_sets) {
-          if (
-            (s.set_code && s.set_code.toLowerCase().includes(cleanQuery)) ||
-            (s.set_name && s.set_name.toLowerCase().includes(cleanQuery))
-          ) {
-            setMatch = true
+          const sCode = (s.set_code || '').toLowerCase()
+          const sNormCode = sCode.replace(/[^a-z0-9]/g, '')
+          const sName = (s.set_name || '').toLowerCase()
+
+          if (sCode === cleanQuery || (normQuery.length >= 3 && sNormCode === normQuery)) {
+            setCodeMatchScore = 400
+            matchedSetCode = s.set_code
             break
+          } else if (sCode.includes(cleanQuery) || (normQuery.length >= 3 && sNormCode.includes(normQuery))) {
+            if (setCodeMatchScore < 250) {
+              setCodeMatchScore = 250
+              matchedSetCode = s.set_code
+            }
+          } else if (sName.includes(cleanQuery)) {
+            if (setCodeMatchScore < 50) {
+              setCodeMatchScore = 50
+              if (!matchedSetCode) matchedSetCode = s.set_code
+            }
           }
         }
       }
-      if (!nameMatch && !idMatch && !setMatch) continue
+
+      if (!isIncludesName && !isIdMatch && setCodeMatchScore === 0) continue
+
+      if (isExactName) relevanceScore += 1000
+      else if (isStartName) relevanceScore += 800
+      else if (isIncludesName) relevanceScore += 600
+
+      if (isIdMatch) relevanceScore += (cId === cleanQuery ? 700 : 500)
+      relevanceScore += setCodeMatchScore
     }
 
     // Type match
@@ -175,16 +204,9 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
       if (!setMatch) continue
     }
 
-    // Determine matched set code
-    let matchedSetCode = null
-    if (card.card_sets && card.card_sets.length > 0) {
-      if (cleanQuery) {
-        const foundSet = card.card_sets.find(
-          (s) => s.set_code && s.set_code.toLowerCase().includes(cleanQuery)
-        )
-        if (foundSet) matchedSetCode = foundSet.set_code
-      }
-      if (!matchedSetCode) matchedSetCode = card.card_sets[0].set_code
+    // Determine default matched set code if not yet assigned
+    if (!matchedSetCode && card.card_sets && card.card_sets.length > 0) {
+      matchedSetCode = card.card_sets[0].set_code
     }
 
     results.push({
@@ -205,19 +227,34 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
       imageFull: card.card_images?.[0]?.image_url || '',
       card_sets: card.card_sets || [],
       matchedSetCode,
+      relevanceScore,
       isExternal: false,
     })
-
-    if (results.length >= maxResults) break
   }
 
+  // Sort local results by relevance score if query provided
+  if (cleanQuery && results.length > 0) {
+    results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0))
+  }
+
+  // Cap results to maxResults
+  const cappedResults = results.slice(0, maxResults)
+
   // 2. If no local results or if advanced criteria provided, check YGOPRODeck API
-  if (results.length === 0) {
+  if (cappedResults.length === 0) {
     try {
       const queryParams = new URLSearchParams()
-      if (name) queryParams.append('name', name)
-      else if (cleanQuery) queryParams.append('fname', cleanQuery)
-      else if (fname) queryParams.append('fname', fname)
+      if (name) {
+        queryParams.append('name', name)
+      } else if (cleanQuery) {
+        if (/^\d+$/.test(cleanQuery)) {
+          queryParams.append('id', cleanQuery)
+        } else {
+          queryParams.append('fname', cleanQuery)
+        }
+      } else if (fname) {
+        queryParams.append('fname', fname)
+      }
 
       if (id) queryParams.append('id', id)
       if (type) queryParams.append('type', type)
@@ -291,9 +328,11 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
     }
   }
 
-  // Sort local results if sort option specified
-  if (sort && results.length > 0) {
-    results.sort((a, b) => {
+  const finalResults = cappedResults.length > 0 ? cappedResults : results
+
+  // Sort results if sort option specified
+  if (sort && finalResults.length > 0) {
+    finalResults.sort((a, b) => {
       if (sort === 'name') return a.name.localeCompare(b.name)
       if (sort === 'atk') return (b.atk || 0) - (a.atk || 0)
       if (sort === 'def') return (b.def || 0) - (a.def || 0)
@@ -302,7 +341,7 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
     })
   }
 
-  return results
+  return finalResults.slice(0, maxResults)
 }
 
 /**
