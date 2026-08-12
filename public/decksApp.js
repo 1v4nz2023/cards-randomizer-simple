@@ -1,10 +1,6 @@
-// Auth Check
-const token = localStorage.getItem('ygo_token')
-const currentUser = JSON.parse(localStorage.getItem('ygo_user') || 'null')
-
-if (!token || !currentUser) {
-  window.location.href = 'index.html'
-}
+// Auth Check (Permite modo libre / invitado si no hay token)
+const token = localStorage.getItem('ygo_token') || ''
+const currentUser = JSON.parse(localStorage.getItem('ygo_user') || 'null') || { id: 1, email: 'invitado@proyectosmera.site' }
 
 function getApiUrl(path) {
   return `/api/decks${path}`

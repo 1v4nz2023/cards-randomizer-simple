@@ -1,18 +1,15 @@
 // Dynamic API Base helper
 const getInventoryApiUrl = (path = '') => `${window.API_BASE || '/api'}/inventory${path}`
 
-// Token & Authentication handling
-const token = localStorage.getItem('ygo_token')
+// Token & Authentication handling (Permite modo libre / invitado si no hay token)
+const token = localStorage.getItem('ygo_token') || ''
 const userStr = localStorage.getItem('ygo_user')
-
-if (!token) {
-  window.location.href = 'login.html'
+let currentUser = { id: 1, email: 'invitado@proyectosmera.site' }
+if (userStr) {
+  try {
+    currentUser = JSON.parse(userStr)
+  } catch (e) {}
 }
-
-let currentUser = null
-try {
-  currentUser = JSON.parse(userStr)
-} catch (e) {}
 
 // DOM Elements
 const userEmailSpan = document.getElementById('userEmailSpan')
