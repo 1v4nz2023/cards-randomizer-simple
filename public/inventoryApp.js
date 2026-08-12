@@ -354,6 +354,13 @@ function renderInventory() {
       </div>
     `
 
+    // Zoom modal image and title click
+    cardEl.querySelector('.binder-card-img-wrap')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('card-select-checkbox')) return
+      openCardZoomModal(item)
+    })
+    cardEl.querySelector('.binder-card-title')?.addEventListener('click', () => openCardZoomModal(item))
+
     // Quantity Plus/Minus handlers
     cardEl.querySelector('.btn-plus').addEventListener('click', () => changeQuantity(item, 1))
     cardEl.querySelector('.btn-minus').addEventListener('click', () => changeQuantity(item, -1))
@@ -866,6 +873,47 @@ nextPageBtn?.addEventListener('click', () => {
   currentPaginationPage++
   renderInventory()
   window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+// Card Zoom Modal Functions
+function openCardZoomModal(item) {
+  const cardZoomModal = document.getElementById('cardZoomModal')
+  const closeCardZoomModalBtn = document.getElementById('closeCardZoomModalBtn')
+  const zoomCardImg = document.getElementById('zoomCardImg')
+  const zoomCardTitle = document.getElementById('zoomCardTitle')
+  const zoomCardMeta = document.getElementById('zoomCardMeta')
+  const zoomCardDesc = document.getElementById('zoomCardDesc')
+
+  if (!cardZoomModal || !zoomCardImg) return
+
+  const imgUrl = item.imageFull || item.card_images?.[0]?.image_url || item.imageSmall || item.card_images?.[0]?.image_url_small || item.image_url || ''
+  zoomCardImg.src = imgUrl
+  
+  if (zoomCardTitle) zoomCardTitle.textContent = item.card_name || item.name || 'Carta Yu-Gi-Oh!'
+  
+  const typeStr = item.humanReadableCardType || item.card_type || item.type || ''
+  const attrStr = item.attribute ? ` · ${item.attribute}` : ''
+  const raceStr = item.race ? ` · ${item.race}` : ''
+  const codeStr = item.card_code || item.set_name ? ` (${item.card_code || item.set_name})` : ''
+  if (zoomCardMeta) zoomCardMeta.textContent = `${typeStr}${attrStr}${raceStr}${codeStr}`
+
+  if (zoomCardDesc) zoomCardDesc.textContent = item.desc || item.description || item.notes || 'Sin descripción disponible.'
+
+  if (closeCardZoomModalBtn) closeCardZoomModalBtn.onclick = () => cardZoomModal.classList.add('hidden')
+  cardZoomModal.onclick = (e) => {
+    if (e.target === cardZoomModal) cardZoomModal.classList.add('hidden')
+  }
+
+  cardZoomModal.classList.remove('hidden')
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('cardZoomModal')
+    if (modal && !modal.classList.contains('hidden')) {
+      modal.classList.add('hidden')
+    }
+  }
 })
 
 // Run initialization

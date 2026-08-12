@@ -23,8 +23,9 @@
         </div>
       </div>
       <div class="nav-tabs">
-        <a href="index.html" class="nav-tab active">Decks</a>
-        <a href="inventory.html" class="nav-tab">Mi Binder</a>
+        <a href="index.html" class="nav-tab active">🎴 Generador</a>
+        <a href="inventory.html" class="nav-tab">📱 Mi Binder</a>
+        <a href="decks.html" class="nav-tab">📋 Mis Decks</a>
       </div>
     </div>
   </nav>
@@ -113,5 +114,19 @@
       window.location.href = 'login.html'
     })
   </script>
+  <!-- Modal Zoom de Carta Ampliada al Centro -->
+  <div id="cardZoomModal" class="modal-overlay hidden">
+    <div class="zoom-modal-content">
+      <button class="zoom-close-btn" id="closeCardZoomModalBtn">&times;</button>
+      <div class="zoom-card-img-wrap">
+        <img id="zoomCardImg" src="" alt="Carta Ampliada">
+      </div>
+      <div class="zoom-card-details">
+        <h3 id="zoomCardTitle">---</h3>
+        <div id="zoomCardMeta" class="zoom-card-meta"></div>
+        <p id="zoomCardDesc" class="zoom-card-desc"></p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -88,40 +88,48 @@ function createCardElement(card) {
 }
 
 function showCardModal(card) {
-  let modal = document.querySelector('.card-modal')
-  if (!modal) {
-    modal = document.createElement('div')
-    modal.className = 'card-modal'
-    modal.innerHTML = `
-      <div class="card-modal-content">
-        <img id="modalImage" src="" alt="">
-        <div id="modalName" class="modal-name"></div>
-        <div id="modalType" class="modal-type"></div>
-        <button id="modalClose" class="modal-close">Cerrar</button>
-      </div>
-    `
-    document.body.appendChild(modal)
+  const cardZoomModal = document.getElementById('cardZoomModal')
+  const closeCardZoomModalBtn = document.getElementById('closeCardZoomModalBtn')
+  const zoomCardImg = document.getElementById('zoomCardImg')
+  const zoomCardTitle = document.getElementById('zoomCardTitle')
+  const zoomCardMeta = document.getElementById('zoomCardMeta')
+  const zoomCardDesc = document.getElementById('zoomCardDesc')
 
-    document.getElementById('modalClose').addEventListener('click', () => {
-      modal.classList.remove('active')
-    })
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active')
-      }
-    })
+  if (!cardZoomModal || !zoomCardImg) {
+    console.error('cardZoomModal not found in DOM')
+    return
   }
 
-  const modalImage = document.getElementById('modalImage')
-  const modalName = document.getElementById('modalName')
-  const modalType = document.getElementById('modalType')
+  const imgUrl = card.imageFull || card.card_images?.[0]?.image_url || card.imageSmall || card.card_images?.[0]?.image_url_small || card.image_url || ''
+  zoomCardImg.src = imgUrl
 
-  modalImage.src = card.imageFull || card.imageSmall || ''
-  modalName.textContent = card.name
-  modalType.textContent = card.type
-  modal.classList.add('active')
+  if (zoomCardTitle) zoomCardTitle.textContent = card.name || card.card_name || 'Carta Yu-Gi-Oh!'
+  
+  const typeStr = card.humanReadableCardType || card.type || card.card_type || ''
+  const attrStr = card.attribute ? ` · ${card.attribute}` : ''
+  const raceStr = card.race ? ` · ${card.race}` : ''
+  const atkStr = card.atk !== undefined && card.atk !== null ? ` · ATK/${card.atk}` : ''
+  const defStr = card.def !== undefined && card.def !== null ? ` DEF/${card.def}` : ''
+  if (zoomCardMeta) zoomCardMeta.textContent = `${typeStr}${attrStr}${raceStr}${atkStr}${defStr}`
+
+  if (zoomCardDesc) zoomCardDesc.textContent = card.desc || card.description || card.notes || 'Sin descripción disponible.'
+
+  if (closeCardZoomModalBtn) closeCardZoomModalBtn.onclick = () => cardZoomModal.classList.add('hidden')
+  cardZoomModal.onclick = (e) => {
+    if (e.target === cardZoomModal) cardZoomModal.classList.add('hidden')
+  }
+
+  cardZoomModal.classList.remove('hidden')
 }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('cardZoomModal')
+    if (modal && !modal.classList.contains('hidden')) {
+      modal.classList.add('hidden')
+    }
+  }
+})
 
 function show(el) {
   el.classList.remove('hidden')

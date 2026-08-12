@@ -1098,3 +1098,905 @@ select.form-control-dark {
     font-size: 0.65rem;
   }
 }
+
+/* ========================================== */
+/* DECKS MODULE STYLES (decks.html)           */
+/* ========================================== */
+
+/* Decks Gallery View */
+.decks-gallery-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.decks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.deck-summary-card {
+  position: relative;
+  background: #141828;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  overflow: hidden;
+}
+
+.deck-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #00d2ff, #ab47bc, #ffc107);
+  opacity: 0.8;
+}
+
+.deck-summary-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 210, 255, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 210, 255, 0.15);
+}
+
+.deck-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deck-card-title-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.deck-name-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.badge-format {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  text-transform: uppercase;
+}
+
+.deck-date-tag {
+  font-size: 0.78rem;
+  color: #8892b0;
+}
+
+.deck-card-metrics {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.metric-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a0aec0;
+}
+
+.metric-pill.ok {
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.1);
+  border-color: rgba(0, 230, 118, 0.3);
+}
+
+.metric-pill.warn {
+  color: #ff9100;
+  background: rgba(255, 145, 0, 0.1);
+  border-color: rgba(255, 145, 0, 0.3);
+}
+
+.deck-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.deck-card-actions .btn,
+.deck-card-actions .btn-delete-deck {
+  flex: 1 1 0px;
+  width: 33.33%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  font-size: 0.78rem;
+  box-sizing: border-box;
+}
+
+/* Editor View Header Bar */
+.editor-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 14px 20px;
+  background: rgba(20, 24, 40, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.icon-btn-back {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn-back:hover {
+  background: #00d2ff;
+  color: #000000;
+  border-color: #00d2ff;
+  box-shadow: 0 0 14px rgba(0, 210, 255, 0.4);
+}
+
+.editor-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-title-wrap h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  background: linear-gradient(135deg, #ffffff, #00d2ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-menu-wrap {
+  position: relative;
+}
+
+.three-dots-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.three-dots-btn:hover {
+  background: rgba(0, 210, 255, 0.2);
+  border-color: #00d2ff;
+  color: #00d2ff;
+}
+
+.deck-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: #141828;
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85);
+  z-index: 500;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(0, 210, 255, 0.15);
+  color: #ffffff;
+}
+
+.dropdown-item.danger {
+  color: #ff6b6b;
+}
+
+.dropdown-item.danger:hover {
+  background: rgba(255, 82, 82, 0.2);
+  color: #ffffff;
+}
+
+/* Deck Board Layout (Desktop 3 Columns + Right Drawer) */
+.deck-editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.deck-columns-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.deck-column {
+  background: #101424;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 500px;
+}
+
+.col-main {
+  border-top: 3px solid #00d2ff;
+}
+
+.col-extra {
+  border-top: 3px solid #ab47bc;
+}
+
+.col-side {
+  border-top: 3px solid #ffb300;
+}
+
+.column-header {
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.column-header h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deck-cards-subgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+/* Individual Card Item inside Deck Columns */
+.deck-item-card {
+  position: relative;
+  background: #161b2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.deck-item-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 210, 255, 0.4);
+}
+
+.deck-item-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 59/86;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.deck-item-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.qty-badge-top {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #00d2ff;
+  color: #00d2ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.deck-item-info {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 4px;
+}
+
+.deck-item-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.deck-item-sub {
+  font-size: 0.68rem;
+  color: #8892b0;
+}
+
+.deck-item-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.btn-item-ctrl {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-item-ctrl:hover {
+  background: #00d2ff;
+  color: #000000;
+}
+
+.btn-item-ctrl.remove-all-btn:hover {
+  background: #ff5252;
+  color: #ffffff;
+}
+
+/* Desktop Right Panel Binder Drawer */
+.binder-drawer-panel {
+  background: #101424;
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+}
+
+.drawer-header h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.drawer-header p {
+  font-size: 0.78rem;
+  color: #8892b0;
+  margin: 0;
+}
+
+.drawer-binder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.drawer-horizontal-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #161b2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px;
+  transition: all 0.2s ease;
+}
+
+.drawer-horizontal-card:hover {
+  border-color: rgba(0, 210, 255, 0.3);
+}
+
+.drawer-horizontal-card.disabled {
+  opacity: 0.55;
+}
+
+.drawer-card-img {
+  width: 40px;
+  aspect-ratio: 59/86;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.drawer-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.drawer-card-meta {
+  font-size: 0.72rem;
+  color: #8892b0;
+}
+
+.avail-tag {
+  color: #00d2ff;
+  font-weight: 600;
+}
+
+.drawer-card-btn-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.multi-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-drawer-action {
+  background: #00d2ff;
+  color: #000000;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-drawer-action:hover {
+  background: #3ed8f0;
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+}
+
+.btn-drawer-action.add-side {
+  background: #ffb300;
+  color: #000000;
+}
+
+.btn-drawer-action.add-side:hover {
+  background: #ffc107;
+}
+
+.btn-drawer-action.in-deck {
+  background: rgba(255, 255, 255, 0.08);
+  color: #8892b0;
+  cursor: default;
+}
+
+/* Mobile Quick Add Bar (Ubicado Arriba) */
+.mobile-action-top-bar {
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.mobile-add-cards-btn {
+  width: 100%;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #00d2ff 0%, #0072ff 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 18px rgba(0, 210, 255, 0.35);
+  transition: all 0.2s ease;
+}
+
+.mobile-add-cards-btn:hover,
+.mobile-add-cards-btn:active {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 210, 255, 0.5);
+  background: linear-gradient(135deg, #00e5ff 0%, #0088ff 100%);
+}
+
+/* Mobile Top Drawer Panel (Abre desde Arriba) */
+.bottom-sheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.bottom-sheet-panel {
+  background: #141828;
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  border-radius: 0 0 24px 24px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 88vh;
+  padding: 18px 20px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9);
+  animation: slideDownFromTop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFromTop {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-handle-bar {
+  display: flex;
+  justify-content: center;
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.sheet-header h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.sheet-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #8892b0;
+  font-size: 1.4rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sheet-close-btn:hover {
+  background: #ff5252;
+  color: #ffffff;
+}
+
+.mobile-drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 64vh;
+  padding-right: 2px;
+}
+
+/* Responsive Layout Rules for Decks Module (Desktop vs Mobile) */
+@media (min-width: 901px) {
+  .mobile-section-tabs,
+  .mobile-action-top-bar,
+  .mobile-add-cards-btn,
+  .floating-add-btn {
+    display: none !important;
+  }
+
+  .deck-column {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body, .container, .main-content {
+    overflow-x: hidden;
+  }
+
+  .deck-editor-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .binder-drawer-panel,
+  .desktop-drawer {
+    display: none !important;
+  }
+
+  .hidden-mobile {
+    display: none !important;
+  }
+
+  .deck-columns-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  .editor-header-bar {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .editor-title-wrap {
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .editor-title-wrap h2 {
+    font-size: 1.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-section-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+
+  .section-tab {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: 10px;
+    background: #191e30;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a0aec0;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+
+  .section-tab.active,
+  .section-tab.active-main {
+    background: #0d47a1;
+    color: #ffffff;
+    border-color: #1e88e5;
+  }
+}
+
+/* Card Zoom Modal (Vista Ampliada al Centro) */
+.zoom-modal-content {
+  position: relative;
+  max-width: 400px;
+  width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: rgba(14, 18, 32, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 0 50px rgba(0, 210, 255, 0.35);
+  animation: zoomPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow-y: auto;
+}
+
+@keyframes zoomPop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.zoom-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 1.4rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.zoom-close-btn:hover {
+  background: #ff5252;
+  color: #ffffff;
+}
+
+.zoom-card-img-wrap {
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 59/86;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+
+.zoom-card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.zoom-card-details {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zoom-card-details h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.zoom-card-meta {
+  font-size: 0.82rem;
+  color: #00d2ff;
+  font-weight: 600;
+}
+
+.zoom-card-desc {
+  font-size: 0.82rem;
+  color: #a0aec0;
+  line-height: 1.4;
+  max-height: 140px;
+  overflow-y: auto;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: pre-wrap;
+}
+
+/* On mobile (<= 600px), display ONLY icons in action buttons */
+@media (max-width: 600px) {
+  .deck-card-actions .btn-text,
+  .toolbar-btn-group .btn-text {
+    display: none !important;
+  }
+
+  .deck-card-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .deck-card-actions .btn,
+  .deck-card-actions .btn-delete-deck {
+    flex: 1 1 0px;
+    width: 33.33%;
+    min-width: 0;
+    padding: 8px 4px;
+    font-size: 1.05rem;
+    border-radius: 8px;
+    justify-content: center;
+  }
+
+  .toolbar-btn-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .toolbar-btn-group .btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 1.1rem;
+    min-width: 38px;
+    justify-content: center;
+  }
+}

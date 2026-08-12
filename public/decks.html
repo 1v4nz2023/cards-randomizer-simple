@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YGO Decks Builder - Mis Barajas</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Header -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-top">
+        <a href="index.html" class="nav-brand">⚡ YGO Randomizer</a>
+        <div class="user-avatar-wrap">
+          <button id="userAvatarBtn" class="user-avatar-btn" title="Perfil">
+            <span id="userInitials">--</span>
+          </button>
+          <div id="userDropdown" class="user-dropdown hidden">
+            <div id="userDropdownEmail" class="dropdown-email"></div>
+            <button id="logoutBtn" class="dropdown-logout-btn">🚪 Cerrar Sesión</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Navigation Tabs -->
+      <div class="nav-tabs">
+        <a href="index.html" class="nav-tab">🎴 Generador</a>
+        <a href="inventory.html" class="nav-tab">📱 Mi Binder</a>
+        <a href="decks.html" class="nav-tab active">📋 Mis Decks</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-content">
+    
+    <!-- GALLERY VIEW: Lista de Decks -->
+    <div id="decksGalleryView" class="decks-gallery-view">
+      <div class="inventory-toolbar">
+        <div class="toolbar-btn-group">
+          <button id="openCreateDeckModalBtn" class="btn btn-add-yellow">+ Crear nuevo deck</button>
+          <button id="openImportYdkDeckModalBtn" class="btn btn-secondary">📥 Importar deck (.ydk)</button>
+        </div>
+        <div class="search-filter-box">
+          <input type="text" id="decksSearchInput" placeholder="🔍 Buscar entre tus decks por nombre..." class="form-control-dark">
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div id="decksLoading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Cargando tus decks...</p>
+      </div>
+
+      <!-- Decks Grid -->
+      <main id="decksGrid" class="decks-grid"></main>
+
+      <!-- Empty State -->
+      <div id="emptyDecksState" class="empty-state hidden">
+        <div class="empty-icon-box">📋</div>
+        <h3>No tienes ningún deck creado</h3>
+        <p>Comienza creando un deck nuevo o importando un archivo `.ydk` desde tu colección.</p>
+      </div>
+    </div>
+
+    <!-- EDITOR VIEW: Editor Visual de Deck (Desktop 3 Cols / Mobile Tabs & Bottom Sheet) -->
+    <div id="deckEditorView" class="deck-editor-view hidden">
+      
+      <!-- Header bar with Three-Dots Menu -->
+      <div class="editor-header-bar">
+        <button id="backToDecksBtn" class="icon-btn-back" title="Volver">&lt;</button>
+        <div class="editor-title-wrap">
+          <h2 id="editorDeckTitle">Cargando Deck...</h2>
+          <span id="editorDeckFormat" class="badge-format">TCG</span>
+        </div>
+        <div class="header-menu-wrap">
+          <button id="deckMenuBtn" class="three-dots-btn" title="Opciones de Deck">⋮</button>
+          <div id="deckMenuDropdown" class="deck-menu-dropdown hidden">
+            <button id="editorExportYdkBtn" class="dropdown-item">📤 Exportar (.ydk)</button>
+            <button id="editorEditMetaBtn" class="dropdown-item">⚙️ Renombrar</button>
+            <button id="editorDeleteDeckBtn" class="dropdown-item danger">🗑️ Eliminar Deck</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Quick Add Bar (Ubicado arriba) -->
+      <div class="mobile-action-top-bar">
+        <button id="openMobileDrawerBtn" class="mobile-add-cards-btn">➕ Agregar cartas desde Binder</button>
+      </div>
+
+      <!-- Section Tabs (Main 0/40, Extra 0/15, Side 0/15) -->
+      <div class="mobile-section-tabs">
+        <button class="section-tab active-main" data-tab="main" id="tabMainBtn">Main <span id="tabMainCount">0/40</span></button>
+        <button class="section-tab" data-tab="extra" id="tabExtraBtn">Extra <span id="tabExtraCount">0/15</span></button>
+        <button class="section-tab" data-tab="side" id="tabSideBtn">Side <span id="tabSideCount">0/15</span></button>
+      </div>
+
+      <div class="deck-editor-layout">
+        <!-- 3-Column Deck Board -->
+        <div class="deck-columns-container">
+          <!-- Main Deck Column -->
+          <div class="deck-column col-main" id="colMainDeck">
+            <div class="column-header main-header">
+              <h3>⚔️ Main Deck <span id="mainCountTag">(0)</span></h3>
+            </div>
+            <div id="mainDeckGrid" class="deck-cards-subgrid"></div>
+          </div>
+
+          <!-- Extra Deck Column -->
+          <div class="deck-column col-extra" id="colExtraDeck">
+            <div class="column-header extra-header">
+              <h3>🌟 Extra Deck <span id="extraCountTag">(0)</span></h3>
+            </div>
+            <div id="extraDeckGrid" class="deck-cards-subgrid"></div>
+          </div>
+
+          <!-- Side Deck Column -->
+          <div class="deck-column col-side" id="colSideDeck">
+            <div class="column-header side-header">
+              <h3>🛡️ Side Deck <span id="sideCountTag">(0)</span></h3>
+            </div>
+            <div id="sideDeckGrid" class="deck-cards-subgrid"></div>
+          </div>
+        </div>
+
+        <!-- Desktop Right Panel: Binder Drawer -->
+        <aside class="binder-drawer-panel desktop-drawer">
+          <div class="drawer-header">
+            <h3>📱 Tu Binder (Colección)</h3>
+            <p>Selecciona cartas libres para añadir al deck</p>
+          </div>
+          <input type="text" id="drawerSearchInput" placeholder="🔍 Buscar carta en tu binder..." class="form-control-dark-sm">
+          <div id="drawerBinderList" class="drawer-binder-list"></div>
+        </aside>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Mobile Bottom Sheet Drawer (Panel Deslizable desde Abajo) -->
+  <div id="bottomSheetOverlay" class="bottom-sheet-overlay hidden">
+    <div id="bottomSheetPanel" class="bottom-sheet-panel">
+      <div class="sheet-handle-bar"><span class="sheet-handle"></span></div>
+      <div class="sheet-header">
+        <h3>Tu binder</h3>
+        <button id="closeBottomSheetBtn" class="sheet-close-btn">&times;</button>
+      </div>
+      <div class="sheet-search-wrap">
+        <input type="text" id="mobileDrawerSearch" placeholder="🔍 Buscar carta en tu binder..." class="form-control-dark">
+      </div>
+      <div id="mobileDrawerBinderList" class="mobile-drawer-list"></div>
+    </div>
+  </div>
+
+  <!-- Modal 1: Crear Deck Nuevo -->
+  <div id="createDeckModal" class="modal-overlay hidden">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3>➕ Crear Deck Nuevo</h3>
+        <button class="close-modal-btn" id="closeCreateDeckModalBtn">&times;</button>
+      </div>
+      <form id="createDeckForm" class="modal-body">
+        <div class="form-group">
+          <label>Nombre del Deck *</label>
+          <input type="text" id="createDeckName" required placeholder="Ej. Yami yugi deck, Blue-Eyes..." class="form-control-dark">
+        </div>
+        <div class="form-group">
+          <label>Formato</label>
+          <select id="createDeckFormat" class="form-control-dark">
+            <option value="TCG">TCG (Estándar)</option>
+            <option value="OCG">OCG</option>
+            <option value="Casual">Casual / Goat / Speed</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelCreateDeckBtn">Cancelar</button>
+          <button type="submit" class="btn btn-add-yellow">Crear Deck</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Importar Deck (.ydk) -->
+  <div id="importYdkDeckModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📥 Importar Deck desde archivo (.ydk)</h3>
+        <button class="close-modal-btn" id="closeImportYdkDeckModalBtn">&times;</button>
+      </div>
+      <form id="importYdkDeckForm" class="modal-body">
+        <div class="form-group">
+          <label>Nombre del nuevo Deck *</label>
+          <input type="text" id="importDeckName" required placeholder="Ej. Yami yugi deck YDK..." class="form-control-dark">
+        </div>
+        <div class="form-group">
+          <label>Formato</label>
+          <select id="importDeckFormat" class="form-control-dark">
+            <option value="TCG">TCG</option>
+            <option value="OCG">OCG</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Seleccionar archivo .ydk desde tu equipo</label>
+          <input type="file" id="importYdkDeckFile" accept=".ydk,.txt" class="form-control-dark">
+        </div>
+
+        <div class="form-group">
+          <label>O pega el contenido de texto del archivo .ydk</label>
+          <textarea id="importYdkDeckText" rows="6" placeholder="#main&#10;46986414&#10;#extra&#10;!side" class="form-control-dark"></textarea>
+        </div>
+
+        <div id="importYdkDeckStatus" class="status-msg hidden"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelImportYdkDeckBtn">Cancelar</button>
+          <button type="submit" id="submitImportYdkDeckBtn" class="btn btn-add-yellow">📥 Importar y Asignar desde Binder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Zoom de Carta Ampliada al Centro -->
+  <div id="cardZoomModal" class="modal-overlay hidden">
+    <div class="zoom-modal-content">
+      <button class="zoom-close-btn" id="closeCardZoomModalBtn">&times;</button>
+      <div class="zoom-card-img-wrap">
+        <img id="zoomCardImg" src="" alt="Carta Ampliada">
+      </div>
+      <div class="zoom-card-details">
+        <h3 id="zoomCardTitle">---</h3>
+        <div id="zoomCardMeta" class="zoom-card-meta"></div>
+        <p id="zoomCardDesc" class="zoom-card-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="decksApp.js"></script>
+</body>
+</html>

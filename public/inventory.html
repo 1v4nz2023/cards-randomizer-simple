@@ -11,7 +11,7 @@
   <nav class="navbar">
     <div class="nav-container">
       <div class="nav-top">
-        <a href="index.html" class="nav-brand">⚡ YGO Randomizer</a>
+        <a href="index.html" class="nav-brand">YGO Randomizer</a>
         <div class="user-avatar-wrap">
           <button id="userAvatarBtn" class="user-avatar-btn" title="Perfil">
             <span id="userInitials">--</span>
@@ -22,10 +22,11 @@
           </div>
         </div>
       </div>
-      <div class="nav-tabs">
-        <a href="index.html" class="nav-tab">Decks</a>
-        <a href="inventory.html" class="nav-tab active">Mi Binder</a>
-      </div>
+      <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">🎴 Generador</a>
+        <a href="inventory.html" class="nav-tab active">📱 Mi Binder</a>
+        <a href="decks.html" class="nav-tab">📋 Mis Decks</a>
+      </nav>
     </div>
   </nav>
 
@@ -84,9 +85,10 @@
     <!-- Action & Filters Bar -->
     <div class="inventory-toolbar">
       <div class="toolbar-btn-group">
-        <button id="openAddModalBtn" class="btn btn-add-yellow">+ Añadir carta al binder</button>
-        <button id="openImportYdkModalBtn" class="btn btn-secondary">📥 Importar baraja (.ydk)</button>
-        <button id="exportYdkBtn" class="btn btn-secondary">📤 Exportar binder (.ydk)</button>
+        <button id="openAddModalBtn" class="btn btn-add-yellow"><span class="icon-emoji">➕ </span><span class="btn-text">Añadir carta al binder</span></button>
+        <button id="openImportYdkModalBtn" class="btn btn-secondary"><span class="icon-emoji">📥 </span><span class="btn-text">Importar baraja (.ydk)</span></button>
+        <button id="exportYdkBtn" class="btn btn-secondary"><span class="icon-emoji">📤 </span><span class="btn-text">Exportar binder (.ydk)</span></button>
+        <button id="toggleMultiSelectBtn" class="btn btn-secondary"><span class="icon-emoji">☑️ </span><span class="btn-text">Seleccionar Varias</span></button>
       </div>
 
       <div class="search-filter-box">
@@ -470,6 +472,117 @@
             <button type="submit" id="submitImportYdkBtn" class="btn btn-add-yellow">📥 Importar a Mi Binder</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Asignar Carta del Binder a un Deck -->
+  <div id="assignToDeckModal" class="modal-overlay hidden">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3>➕ Asignar Carta a un Deck</h3>
+        <button class="close-modal-btn" id="closeAssignToDeckModalBtn">&times;</button>
+      </div>
+      <form id="assignToDeckForm" class="modal-body">
+        <input type="hidden" id="assignInvId">
+        <div class="assign-preview-box">
+          <img id="assignModalImg" src="" alt="">
+          <div class="assign-modal-info">
+            <h4 id="assignModalName">Carta</h4>
+            <span id="assignModalAvailTag" class="badge-avail">Copias Libres: 0</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Selecciona el Deck Destino *</label>
+          <select id="assignModalDeckSelect" class="form-control-dark" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Sección del Deck *</label>
+          <select id="assignModalSectionSelect" class="form-control-dark" required>
+            <option value="main">⚔️ Main Deck</option>
+            <option value="extra">🌟 Extra Deck (Fusión/Synchro/XYZ/Link)</option>
+            <option value="side">🛡️ Side Deck</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Cantidad de copias *</label>
+          <input type="number" id="assignModalQtyInput" min="1" max="3" value="1" class="form-control-dark" required>
+        </div>
+
+        <div id="assignModalError" class="error hidden"></div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelAssignToDeckBtn" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="submitAssignToDeckBtn" class="btn btn-add-yellow">Asignar a Deck</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating Batch Action Bar (Appears when cards are selected) -->
+  <div id="batchActionBar" class="batch-action-bar hidden">
+    <div class="batch-bar-info">
+      <span id="batchSelectedCount" class="batch-count-badge">0 seleccionadas</span>
+      <button id="selectAllBatchBtn" class="btn-text-sm"><span class="icon-emoji">☑️ </span><span class="btn-text">Seleccionar todas en esta hoja</span></button>
+    </div>
+    <div class="batch-bar-actions">
+      <button id="cancelBatchBtn" class="btn btn-secondary btn-sm"><span class="icon-emoji">✖️ </span><span class="btn-text">Cancelar</span></button>
+      <button id="openBatchAssignModalBtn" class="btn btn-add-yellow btn-sm"><span class="icon-emoji">➕ </span><span class="btn-text">Mover seleccionadas al Deck</span></button>
+    </div>
+  </div>
+
+  <!-- Modal 5: Asignar Múltiples Cartas Seleccionadas a un Deck -->
+  <div id="batchAssignModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>➕ Mover Cartas Seleccionadas al Deck</h3>
+        <button class="close-modal-btn" id="closeBatchAssignModalBtn">&times;</button>
+      </div>
+      <form id="batchAssignForm" class="modal-body">
+        <div class="form-group">
+          <label>Selecciona el Deck Destino *</label>
+          <select id="batchModalDeckSelect" class="form-control-dark" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Asignación de Sección *</label>
+          <select id="batchModalSectionSelect" class="form-control-dark" required>
+            <option value="auto">✨ Auto-detectar (Fusión/Synchro/XYZ/Link -> Extra, demás -> Main)</option>
+            <option value="main">⚔️ Todo a Main Deck</option>
+            <option value="extra">🌟 Todo a Extra Deck</option>
+            <option value="side">🛡️ Todo a Side Deck</option>
+          </select>
+        </div>
+
+        <div class="batch-preview-list-wrap">
+          <label>Cartas a transferir (<span id="batchListCount">0</span>):</label>
+          <div id="batchPreviewList" class="batch-preview-list"></div>
+        </div>
+
+        <div id="batchModalError" class="error hidden"></div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelBatchModalBtn" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="submitBatchAssignBtn" class="btn btn-add-yellow">🚀 Mover Cartas al Deck</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Zoom de Carta Ampliada al Centro -->
+  <div id="cardZoomModal" class="modal-overlay hidden">
+    <div class="zoom-modal-content">
+      <button class="zoom-close-btn" id="closeCardZoomModalBtn">&times;</button>
+      <div class="zoom-card-img-wrap">
+        <img id="zoomCardImg" src="" alt="Carta Ampliada">
+      </div>
+      <div class="zoom-card-details">
+        <h3 id="zoomCardTitle">---</h3>
+        <div id="zoomCardMeta" class="zoom-card-meta"></div>
+        <p id="zoomCardDesc" class="zoom-card-desc"></p>
       </div>
     </div>
   </div>
