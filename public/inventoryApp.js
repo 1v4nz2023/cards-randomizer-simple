@@ -2,15 +2,18 @@
 const API_BASE = window.API_BASE || (window.location.pathname.includes('/cards/') ? '/cards/api' : '/api')
 const getInventoryApiUrl = (path = '') => `${API_BASE}/inventory${path}`
 
-// Token & Authentication handling (Permite modo libre / invitado si no hay token)
-const token = localStorage.getItem('ygo_token') || ''
+// Token & Authentication handling (Protección estricta - Redirige si no hay token)
+const token = localStorage.getItem('ygo_token')
 const userStr = localStorage.getItem('ygo_user')
-let currentUser = { id: 1, email: 'invitado@proyectosmera.site' }
-if (userStr) {
-  try {
-    currentUser = JSON.parse(userStr)
-  } catch (e) {}
+
+if (!token) {
+  window.location.href = 'login.html'
 }
+
+let currentUser = null
+try {
+  currentUser = JSON.parse(userStr)
+} catch (e) {}
 
 // DOM Elements
 const userEmailSpan = document.getElementById('userEmailSpan')
