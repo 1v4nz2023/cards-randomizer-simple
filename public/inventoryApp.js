@@ -727,13 +727,36 @@ function selectCardFromCatalog(card) {
   addCardForm.classList.remove('hidden')
 }
 
-function resetAddForm() {
+let addSuccessToastTimeout = null
+
+function showAddSuccessToast(msg) {
+  const toastEl = document.getElementById('addCardSuccessMsg')
+  if (!toastEl) return
+  clearTimeout(addSuccessToastTimeout)
+  toastEl.textContent = msg
+  toastEl.classList.remove('hidden')
+  addSuccessToastTimeout = setTimeout(() => {
+    toastEl.classList.add('hidden')
+  }, 4000)
+}
+
+function resetAddForm(keepModalOpen = false) {
   cardSearchInput.value = ''
   autocompleteResults.innerHTML = ''
   autocompleteResults.classList.add('hidden')
   selectedCardPreview.classList.add('hidden')
   addCardForm.classList.add('hidden')
   addCardForm.reset()
+  if (addQuantity) addQuantity.value = '1'
+  if (addCondition) addCondition.value = 'Near Mint'
+
+  if (!keepModalOpen) {
+    addCardModal.classList.add('hidden')
+  } else {
+    setTimeout(() => {
+      cardSearchInput.focus()
+    }, 50)
+  }
 }
 
 // Add Form Submission
@@ -768,7 +791,8 @@ addCardForm.addEventListener('submit', async (e) => {
     const data = await res.json()
 
     if (data.success) {
-      addCardModal.classList.add('hidden')
+      showAddSuccessToast(`✅ ¡Carta guardada exitosamente! (${data.data.card_name} [${data.data.card_code || 'Set'}])`)
+
       const existingIdx = inventoryData.findIndex((i) => i.id === data.data.id)
       if (existingIdx !== -1) {
         inventoryData[existingIdx] = data.data
@@ -778,6 +802,9 @@ addCardForm.addEventListener('submit', async (e) => {
       updateDashboardMetrics()
       populateFilters()
       renderInventory()
+
+      // Keep modal open & focus search for continuous card entry
+      resetAddForm(true)
     } else {
       alert(data.error || 'Error al guardar carta.')
     }

@@ -894,6 +894,21 @@ select.form-control-dark {
   justify-content: center;
 }
 
+.status-msg.success {
+  background: rgba(46, 125, 50, 0.25);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
 /* Selected Card Preview in Modal */
 .selected-card-preview {
   display: flex;
