@@ -236,10 +236,50 @@ function populateFilters() {
   filterPageSelect.value = currentPageVal
 }
 
+let binderFilterDebounce = null
+const smartSearchCache = new Map()
+
+async function fetchSmartTranslation(queryStr) {
+  if (!queryStr || queryStr.length < 2) return null
+  const cacheKey = queryStr.toLowerCase().trim()
+  if (smartSearchCache.has(cacheKey)) return smartSearchCache.get(cacheKey)
+
+  try {
+    const res = await fetch(getInventoryApiUrl(`/translate?q=${encodeURIComponent(queryStr)}`), {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success) {
+        const payload = {
+          translated: (data.translated || '').toLowerCase().trim(),
+          tokens: (data.tokens || []).map((t) => t.toLowerCase().trim()),
+        }
+        smartSearchCache.set(cacheKey, payload)
+        return payload
+      }
+    }
+  } catch (e) {}
+  return null
+}
+
+function parseSetCodeFrontend(codeStr) {
+  if (!codeStr || typeof codeStr !== 'string') return null
+  const match = codeStr.trim().match(/^([a-z0-9]{2,6})[-_\s]?([a-z]{1,3})(\d{3,4})$/i)
+  if (!match) return null
+  return { setPrefix: match[1].toUpperCase(), num: match[3] }
+}
+
 // Render Inventory Cards Grid (Paginación de 40 cartas por hoja en Desktop)
 function renderInventory() {
   const searchFilter = (filterSearchInput.value || '').trim().toLowerCase()
+  const smartInfo = smartSearchCache.get(searchFilter) || { translated: '', tokens: [] }
+  const translatedSearch = smartInfo.translated || ''
+  const searchTokens = smartInfo.tokens || []
   const normSearchFilter = searchFilter.replace(/[^a-z0-9]/g, '')
+  const normTranslatedSearch = translatedSearch.replace(/[^a-z0-9]/g, '')
+  const parsedSearchSet = parseSetCodeFrontend(searchFilter)
+
   const typeFilter = (filterTypeSelect?.value || '').toLowerCase()
   const attributeFilter = (filterAttributeSelect?.value || '').toLowerCase()
   const raceFilter = (filterRaceSelect?.value || '').toLowerCase()
@@ -247,12 +287,37 @@ function renderInventory() {
   const pageFilter = filterPageSelect.value
 
   const filtered = inventoryData.filter(item => {
+    const cardName = (item.card_name || '').toLowerCase()
+    const normCardName = cardName.replace(/[^a-z0-9]/g, '')
     const cardCode = (item.card_code || '').toLowerCase()
     const normCode = cardCode.replace(/[^a-z0-9]/g, '')
+    const parsedCardCode = parseSetCodeFrontend(cardCode)
+
+    let matchesCodeSetEquivalence = false
+    if (parsedSearchSet && parsedCardCode) {
+      if (parsedSearchSet.setPrefix === parsedCardCode.setPrefix && parsedSearchSet.num === parsedCardCode.num) {
+        matchesCodeSetEquivalence = true
+      }
+    }
+
+    const matchesTranslation = translatedSearch && (
+      cardName.includes(translatedSearch) ||
+      (normTranslatedSearch.length >= 3 && normCardName.includes(normTranslatedSearch)) ||
+      cardCode.includes(translatedSearch)
+    )
+
+    const matchesToken = searchTokens.some((token) => token && (
+      cardName.includes(token) ||
+      normCardName.includes(token) ||
+      cardCode.includes(token)
+    ))
 
     const matchesSearch = !searchFilter ||
-      (item.card_name && item.card_name.toLowerCase().includes(searchFilter)) ||
+      (cardName && cardName.includes(searchFilter)) ||
       (cardCode && cardCode.includes(searchFilter)) ||
+      matchesCodeSetEquivalence ||
+      matchesTranslation ||
+      matchesToken ||
       (normSearchFilter.length >= 3 && normCode && normCode.includes(normSearchFilter)) ||
       (item.set_name && item.set_name.toLowerCase().includes(searchFilter)) ||
       (item.rarity && item.rarity.toLowerCase().includes(searchFilter)) ||
@@ -318,11 +383,59 @@ function renderInventory() {
     cardEl.className = 'binder-card'
 
     const condClass = getConditionBadgeClass(item.condition)
+    const totalQty = item.quantity || 1
+    const assignedQty = item.assigned_copies || 0
+    const availableQty = item.available_quantity !== undefined ? item.available_quantity : Math.max(0, totalQty - assignedQty)
+
+    let qtyBadgeText = `${totalQty}x`
+    let qtyBadgeClass = 'binder-quantity-badge'
+    if (assignedQty > 0) {
+      qtyBadgeText = `${availableQty}/${totalQty}x`
+      if (availableQty === 0) {
+        qtyBadgeClass += ' all-assigned'
+      } else {
+        qtyBadgeClass += ' partial-assigned'
+      }
+    }
+
+    let deckAssignmentsHtml = ''
+    if (item.assignments && item.assignments.length > 0) {
+      deckAssignmentsHtml = item.assignments.map(a => {
+        const secTag = a.section ? ` · ${a.section.toUpperCase()}` : ''
+        return `<span class="badge-deck-location" title="Asignada a ${a.deck_name}">📌 ${a.deck_name}${secTag} [x${a.quantity}]</span>`
+      }).join(' ')
+    }
+
+    let pageSlotHtml = ''
+    if (item.binder_page || item.binder_slot) {
+      const pageStr = item.binder_page ? `📖 Pág. <strong>${item.binder_page}</strong>` : ''
+      const slotStr = item.binder_slot ? ` Slot <strong>${item.binder_slot}</strong>` : ''
+      pageSlotHtml = `<span>${pageStr}${slotStr}</span>`
+    }
+
+    let locationSummaryHtml = ''
+    if (deckAssignmentsHtml) {
+      const statusTag = availableQty > 0
+        ? `<span class="avail-tag-green">${availableQty}/${totalQty} disp.</span>`
+        : `<span class="avail-tag-orange">0/${totalQty} disp. (Todas en Decks)</span>`
+      locationSummaryHtml = `
+        <div class="binder-deck-list">${deckAssignmentsHtml}</div>
+        <div class="binder-avail-status">${pageSlotHtml} ${statusTag}</div>
+      `
+    } else if (pageSlotHtml) {
+      locationSummaryHtml = `
+        <div class="binder-avail-status">${pageSlotHtml} <span class="avail-tag-green">${totalQty}/${totalQty} disp.</span></div>
+      `
+    } else {
+      locationSummaryHtml = `
+        <div class="binder-avail-status">📍 Sin Ubicar <span class="avail-tag-green">${totalQty}/${totalQty} disp.</span></div>
+      `
+    }
 
     cardEl.innerHTML = `
       <div class="binder-card-img-wrap">
         <img src="${item.imageFull || item.imageSmall || 'placeholder.jpg'}" alt="${item.card_name}" loading="lazy">
-        <span class="binder-quantity-badge">${item.quantity}x</span>
+        <span class="${qtyBadgeClass}">${qtyBadgeText}</span>
         ${item.condition ? `<span class="condition-badge ${condClass}">${getConditionShort(item.condition)}</span>` : ''}
       </div>
 
@@ -334,9 +447,7 @@ function renderInventory() {
         </div>
 
         <div class="binder-location">
-          ${item.binder_page ? `📖 Pág. <strong>${item.binder_page}</strong>` : ''}
-          ${item.binder_slot ? ` • Slot <strong>${item.binder_slot}</strong>` : ''}
-          ${!item.binder_page && !item.binder_slot ? '📍 Sin Ubicar' : ''}
+          ${locationSummaryHtml}
         </div>
 
         ${item.notes ? `<div class="binder-notes" title="${item.notes}">📝 ${item.notes}</div>` : ''}
@@ -463,6 +574,8 @@ openAddModalBtn.addEventListener('click', () => {
 closeAddModalBtn.addEventListener('click', () => addCardModal.classList.add('hidden'))
 cancelAddBtn.addEventListener('click', () => addCardModal.classList.add('hidden'))
 
+let currentSearchRequestId = 0
+
 // Autocomplete Search against cards.json and YGOPRODeck API
 function triggerCatalogSearch() {
   const query = (cardSearchInput.value || '').trim()
@@ -479,6 +592,8 @@ function triggerCatalogSearch() {
     return
   }
 
+  const requestId = ++currentSearchRequestId
+
   searchDebounceTimeout = setTimeout(async () => {
     try {
       const queryParams = new URLSearchParams()
@@ -493,6 +608,9 @@ function triggerCatalogSearch() {
       })
       const data = await res.json()
 
+      // Ignore out-of-order responses from stale/older requests!
+      if (requestId !== currentSearchRequestId) return
+
       if (data.success && data.data.length > 0) {
         renderAutocompleteResults(data.data)
       } else {
@@ -500,9 +618,11 @@ function triggerCatalogSearch() {
         autocompleteResults.classList.remove('hidden')
       }
     } catch (err) {
-      console.error('Error in search:', err)
+      if (requestId === currentSearchRequestId) {
+        console.error('Error in search:', err)
+      }
     }
-  }, 250)
+  }, 200)
 }
 
 cardSearchInput?.addEventListener('input', triggerCatalogSearch)
@@ -520,6 +640,10 @@ function renderAutocompleteResults(cards) {
       ? `<span class="badge-code-highlight">${card.matchedSetCode}</span>`
       : (card.card_sets && card.card_sets[0] ? `<span class="badge-code">${card.card_sets[0].set_code}</span>` : '')
 
+    const translationTag = card.translatedFrom
+      ? `<span class="badge-translation" title="Traducido de: ${card.translatedFrom}">🌐 Traducido de: "${card.translatedFrom}"</span>`
+      : ''
+
     item.innerHTML = `
       <img src="${card.imageSmall}" alt="${card.name}">
       <div class="item-info">
@@ -527,7 +651,10 @@ function renderAutocompleteResults(cards) {
           <span class="item-name">${card.name}</span>
           ${codeTag}
         </div>
-        <span class="item-type">${card.humanReadableCardType || card.type}</span>
+        <div class="item-sub-row">
+          <span class="item-type">${card.humanReadableCardType || card.type}</span>
+          ${translationTag}
+        </div>
       </div>
     `
     item.addEventListener('click', () => selectCardFromCatalog(card))
@@ -545,6 +672,9 @@ function selectCardFromCatalog(card) {
   previewName.textContent = card.name
   previewType.textContent = card.humanReadableCardType || card.type
   selectedCardPreview.classList.remove('hidden')
+
+  const userRawSearch = cardSearchInput.value || ''
+  const parsedUserSearch = parseSetCodeFrontend(userRawSearch)
 
   // Populate set / expansion dropdown
   addSetSelect.innerHTML = ''
@@ -567,14 +697,22 @@ function selectCardFromCatalog(card) {
 
     addSetSelect.selectedIndex = selectedIndexToSet
     const chosen = card.card_sets[selectedIndexToSet]
-    addCardCode.value = chosen.set_code
+
+    if (card.matchedSetCode) {
+      addCardCode.value = card.matchedSetCode.toUpperCase()
+    } else if (parsedUserSearch && parsedUserSearch.setPrefix) {
+      addCardCode.value = userRawSearch.trim().toUpperCase()
+    } else {
+      addCardCode.value = chosen.set_code
+    }
+
     addRarity.value = chosen.set_rarity
   } else {
     const opt = document.createElement('option')
     opt.value = ''
     opt.textContent = 'Set genérico / Sin especificación'
     addSetSelect.appendChild(opt)
-    addCardCode.value = ''
+    addCardCode.value = (parsedUserSearch ? userRawSearch.trim().toUpperCase() : '')
     addRarity.value = ''
   }
 
@@ -631,7 +769,12 @@ addCardForm.addEventListener('submit', async (e) => {
 
     if (data.success) {
       addCardModal.classList.add('hidden')
-      inventoryData.unshift(data.data)
+      const existingIdx = inventoryData.findIndex((i) => i.id === data.data.id)
+      if (existingIdx !== -1) {
+        inventoryData[existingIdx] = data.data
+      } else {
+        inventoryData.unshift(data.data)
+      }
       updateDashboardMetrics()
       populateFilters()
       renderInventory()
@@ -876,6 +1019,12 @@ nextPageBtn?.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
 
+let isShowingSpanishDesc = false
+let currentEnglishTitle = ''
+let currentEnglishDesc = ''
+let currentSpanishTitle = ''
+let currentSpanishDesc = ''
+
 // Card Zoom Modal Functions
 function openCardZoomModal(item) {
   const cardZoomModal = document.getElementById('cardZoomModal')
@@ -884,13 +1033,15 @@ function openCardZoomModal(item) {
   const zoomCardTitle = document.getElementById('zoomCardTitle')
   const zoomCardMeta = document.getElementById('zoomCardMeta')
   const zoomCardDesc = document.getElementById('zoomCardDesc')
+  const toggleDescLangBtn = document.getElementById('toggleDescLangBtn')
 
   if (!cardZoomModal || !zoomCardImg) return
 
   const imgUrl = item.imageFull || item.card_images?.[0]?.image_url || item.imageSmall || item.card_images?.[0]?.image_url_small || item.image_url || ''
   zoomCardImg.src = imgUrl
   
-  if (zoomCardTitle) zoomCardTitle.textContent = item.card_name || item.name || 'Carta Yu-Gi-Oh!'
+  currentEnglishTitle = item.card_name || item.name || 'Carta Yu-Gi-Oh!'
+  if (zoomCardTitle) zoomCardTitle.textContent = currentEnglishTitle
   
   const typeStr = item.humanReadableCardType || item.card_type || item.type || ''
   const attrStr = item.attribute ? ` · ${item.attribute}` : ''
@@ -905,7 +1056,53 @@ function openCardZoomModal(item) {
   if (!cardDesc) {
     cardDesc = 'Sin descripción disponible.'
   }
-  if (zoomCardDesc) zoomCardDesc.textContent = cardDesc
+
+  currentEnglishDesc = cardDesc
+  currentSpanishTitle = ''
+  currentSpanishDesc = ''
+  isShowingSpanishDesc = false
+
+  if (zoomCardDesc) zoomCardDesc.textContent = currentEnglishDesc
+
+  if (toggleDescLangBtn) {
+    toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+    toggleDescLangBtn.onclick = async () => {
+      if (!isShowingSpanishDesc) {
+        if (!currentSpanishDesc) {
+          toggleDescLangBtn.textContent = '⏳ Buscando en Wiki Español...'
+          try {
+            const res = await fetch(getInventoryApiUrl(`/description?name=${encodeURIComponent(currentEnglishTitle)}`), {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (res.ok) {
+              const data = await res.json()
+              if (data.success && data.spanishDesc) {
+                currentSpanishTitle = data.spanishName || currentEnglishTitle
+                currentSpanishDesc = data.spanishDesc
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (currentSpanishDesc) {
+          if (zoomCardTitle) zoomCardTitle.textContent = currentSpanishTitle
+          zoomCardDesc.textContent = currentSpanishDesc
+          isShowingSpanishDesc = true
+          toggleDescLangBtn.textContent = '🇬🇧 Ver en Inglés'
+        } else {
+          toggleDescLangBtn.textContent = '❌ Sin traducción en Wiki'
+          setTimeout(() => {
+            toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+          }, 2000)
+        }
+      } else {
+        if (zoomCardTitle) zoomCardTitle.textContent = currentEnglishTitle
+        zoomCardDesc.textContent = currentEnglishDesc
+        isShowingSpanishDesc = false
+        toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+      }
+    }
+  }
 
   if (closeCardZoomModalBtn) closeCardZoomModalBtn.onclick = () => cardZoomModal.classList.add('hidden')
   cardZoomModal.onclick = (e) => {

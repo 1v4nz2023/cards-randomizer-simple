@@ -439,8 +439,59 @@ select.form-control-dark {
   color: #00d2ff;
   margin-top: 4px;
   background: rgba(0, 210, 255, 0.08);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.binder-quantity-badge.partial-assigned {
+  background: rgba(0, 40, 70, 0.95);
+  color: #00d2ff;
+  border-color: #00d2ff;
+}
+
+.binder-quantity-badge.all-assigned {
+  background: rgba(80, 20, 0, 0.95);
+  color: #ff9800;
+  border-color: #ff9800;
+}
+
+.binder-deck-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.badge-deck-location {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(147, 51, 234, 0.25);
+  color: #e9d5ff;
+  border: 1px solid rgba(168, 85, 247, 0.5);
   padding: 2px 6px;
   border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.binder-avail-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #8892b0;
+  margin-top: 2px;
+}
+
+.avail-tag-green {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.avail-tag-orange {
+  color: #fb923c;
+  font-weight: 600;
 }
 
 .binder-card-actions {
@@ -820,6 +871,23 @@ select.form-control-dark {
   color: #8892b0;
 }
 
+.item-sub-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.badge-translation {
+  font-size: 0.7rem;
+  background: rgba(155, 89, 182, 0.2);
+  color: #d7bde2;
+  border: 1px solid rgba(155, 89, 182, 0.4);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 .autocomplete-item.empty {
   color: #8892b0;
   font-size: 0.85rem;
@@ -872,6 +940,28 @@ select.form-control-dark {
   font-size: 1rem;
   font-weight: 500;
   color: #00d2ff;
+}
+
+.btn-toggle-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 210, 255, 0.15);
+  color: #00d2ff;
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-lang:hover {
+  background: rgba(0, 210, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
 }
 
 .loading {

@@ -8,6 +8,9 @@ const externalCardsCache = new Map()
 const apiCache = new Map()
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000
 
+// Cache for Spanish -> English translations
+const translationCache = new Map()
+
 export function getCardsCatalog() {
   if (!cardsCache) {
     try {
@@ -19,6 +22,227 @@ export function getCardsCatalog() {
     }
   }
   return cardsCache
+}
+
+/**
+ * Parses set code string (e.g. INFO-SP088, LBD-S001, SDK-ES001) and returns English equivalent info.
+ */
+export function parseSetCode(codeStr) {
+  if (!codeStr || typeof codeStr !== 'string') return null
+  const clean = codeStr.trim().toUpperCase()
+
+  // Match prefix, region, and optional 1-4 digits number (e.g. INFO-SP088, INFO-SP08, INFO-SP)
+  const regex = /^([A-Z0-9]{2,6})[-_\s]?([A-Z]{1,3})(\d{1,4})?$/i
+  const match = clean.match(regex)
+  if (!match) return null
+
+  const setPrefix = match[1]
+  const regionTag = match[2]
+  const num = match[3] || ''
+
+  const nonEnRegions = ['SP', 'ES', 'DE', 'FR', 'IT', 'PT', 'JP', 'JA', 'KR', 'S', 'E', 'G', 'F', 'I']
+  const isRegional = nonEnRegions.includes(regionTag)
+
+  const convertedCode = `${setPrefix}-EN${num}`
+  const baseCode = `${setPrefix}-${num}`
+
+  return {
+    isRegional,
+    originalCode: clean,
+    convertedCode,
+    setPrefix,
+    regionTag,
+    num,
+    baseCode,
+  }
+}
+
+const YGO_ES_DICTIONARY = {
+  'mago oscuro': 'Dark Magician',
+  'dragon blanco de ojos azules': 'Blue-Eyes White Dragon',
+  'dragón blanco de ojos azules': 'Blue-Eyes White Dragon',
+  'dragon negro de ojos rojos': 'Red-Eyes Black Dragon',
+  'dragón negro de ojos rojos': 'Red-Eyes Black Dragon',
+  'gamba exterminadora': 'Zapper Shrimp',
+  'heroe elemental': 'Elemental HERO',
+  'héroe elemental': 'Elemental HERO',
+  'heroe del destino': 'Destiny HERO',
+  'héroe del destino': 'Destiny HERO',
+  'dragón de polvo de estrellas': 'Stardust Dragon',
+  'dragon de polvo de estrellas': 'Stardust Dragon',
+  'dragón cibernético': 'Cyber Dragon',
+  'dragon cibernetico': 'Cyber Dragon',
+}
+
+const SPANISH_COMMON_SYNONYMS = {
+  'gamba': ['shrimp', 'prawn'],
+  'camaron': ['shrimp', 'prawn'],
+  'camarón': ['shrimp', 'prawn'],
+  'mago': ['magician', 'wizard', 'mage'],
+  'maga': ['magician', 'witch', 'mage'],
+  'ojos': ['eyes', 'eye'],
+  'ojo': ['eye'],
+  'dragon': ['dragon'],
+  'dragón': ['dragon'],
+  'monstruo': ['monster'],
+  'espejo': ['mirror'],
+  'negro': ['black', 'dark'],
+  'blanco': ['white'],
+  'azul': ['blue'],
+  'rojo': ['red'],
+  'fuego': ['fire'],
+  'agua': ['water'],
+  'tierra': ['earth'],
+  'viento': ['wind'],
+  'luz': ['light'],
+  'oscuridad': ['dark'],
+  'oscuro': ['dark'],
+  'oscura': ['dark'],
+  'héroe': ['hero'],
+  'heroe': ['hero'],
+  'destino': ['destiny'],
+  'polimerizacion': ['polymerization'],
+  'polimerización': ['polymerization'],
+  'ciber': ['cyber'],
+  'cibernetico': ['cyber'],
+  'cibernético': ['cyber'],
+  'despia': ['despia'],
+  'kashtira': ['kashtira'],
+  'labrynth': ['labrynth'],
+  'purrely': ['purrely'],
+}
+
+/**
+ * Extracts searchable English tokens/synonyms for a given Spanish query and translated string.
+ */
+export function getSearchTokens(text, translatedFull = '') {
+  const tokenSet = new Set()
+  if (!text || typeof text !== 'string') return []
+
+  const words = text.toLowerCase().trim().split(/[^a-z0-9áéíóúñ]+/i)
+  words.forEach((w) => {
+    if (SPANISH_COMMON_SYNONYMS[w]) {
+      SPANISH_COMMON_SYNONYMS[w].forEach((syn) => tokenSet.add(syn))
+    }
+  })
+
+  if (translatedFull && typeof translatedFull === 'string') {
+    const transWords = translatedFull.toLowerCase().trim().split(/[^a-z0-9]+/i)
+    transWords.forEach((w) => {
+      if (w.length >= 3) tokenSet.add(w)
+    })
+  }
+
+  return Array.from(tokenSet)
+}
+
+/**
+ * Translates text from Spanish to English using YGO dictionary and Yu-Gi-Oh! Spanish Wiki API ONLY.
+ */
+export async function translateEsToEn(text) {
+  if (!text || typeof text !== 'string') return text
+  const cleanText = text.trim()
+  if (cleanText.length < 2) return cleanText
+
+  const cacheKey = cleanText.toLowerCase()
+
+  // 0. Check Yu-Gi-Oh! Spanish Dictionary
+  if (YGO_ES_DICTIONARY[cacheKey]) {
+    return YGO_ES_DICTIONARY[cacheKey]
+  }
+
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey)
+  }
+
+  // 1. Yu-Gi-Oh! Spanish Wiki API (Traducciones oficiales de cartas Yu-Gi-Oh!)
+  try {
+    const wikiUrl = `https://yugioh.fandom.com/es/api.php?action=opensearch&limit=1&format=json&search=${encodeURIComponent(cleanText)}`
+    const wikiRes = await fetch(wikiUrl)
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json()
+      if (wikiData && wikiData[1] && wikiData[1].length > 0) {
+        const pageTitle = wikiData[1][0]
+        const pageUrl = `https://yugioh.fandom.com/es/api.php?action=query&prop=revisions&rvprop=content&format=json&titles=${encodeURIComponent(pageTitle)}`
+        const pageRes = await fetch(pageUrl)
+        if (pageRes.ok) {
+          const pageData = await pageRes.json()
+          const pages = pageData.query?.pages || {}
+          const page = Object.values(pages)[0]
+          const content = page?.revisions?.[0]?.['*'] || ''
+          const matchEng = content.match(/\|\s*ingl[eé]s\s*=\s*([^|\n}]+)/i) || content.match(/\|\s*nombre_ingl[eé]s\s*=\s*([^|\n}]+)/i)
+          if (matchEng && matchEng[1]) {
+            const officialEnName = matchEng[1].trim()
+            console.log(`[Translate YGO-Wiki] "${cleanText}" -> "${officialEnName}"`)
+            translationCache.set(cacheKey, officialEnName)
+            return officialEnName
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Translate YGO-Wiki Error]:', err.message)
+  }
+
+  return cleanText
+}
+
+const spanishDescCache = new Map()
+
+/**
+ * Fetches official Spanish card description/effect text from Yu-Gi-Oh! Spanish Wiki API.
+ */
+export async function fetchSpanishDescription(text) {
+  if (!text || typeof text !== 'string') return null
+  const cleanText = text.trim()
+  if (cleanText.length < 2) return null
+
+  const cacheKey = cleanText.toLowerCase()
+  if (spanishDescCache.has(cacheKey)) {
+    return spanishDescCache.get(cacheKey)
+  }
+
+  try {
+    const wikiUrl = `https://yugioh.fandom.com/es/api.php?action=opensearch&limit=1&format=json&search=${encodeURIComponent(cleanText)}`
+    const wikiRes = await fetch(wikiUrl)
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json()
+      if (wikiData && wikiData[1] && wikiData[1].length > 0) {
+        const pageTitle = wikiData[1][0]
+        const pageUrl = `https://yugioh.fandom.com/es/api.php?action=query&prop=revisions&rvprop=content&format=json&titles=${encodeURIComponent(pageTitle)}`
+        const pageRes = await fetch(pageUrl)
+        if (pageRes.ok) {
+          const pageData = await pageRes.json()
+          const pages = pageData.query?.pages || {}
+          const page = Object.values(pages)[0]
+          const content = page?.revisions?.[0]?.['*'] || ''
+
+          const matchDesc = content.match(/\|\s*descripci[oó]n\s*=\s*([^|\n}]+)/i) ||
+                            content.match(/\|\s*texto\s*=\s*([^|\n}]+)/i) ||
+                            content.match(/\|\s*efecto\s*=\s*([^|\n}]+)/i)
+
+          if (matchDesc && matchDesc[1]) {
+            const cleanDesc = matchDesc[1]
+              .replace(/<br\s*\/?>/gi, '\n')
+              .replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1')
+              .replace(/'''?/g, '')
+              .trim()
+
+            if (cleanDesc) {
+              console.log(`[Wiki Info] Found Spanish info for "${cleanText}" -> "${pageTitle}"`)
+              const payload = { spanishName: pageTitle, spanishDesc: cleanDesc }
+              spanishDescCache.set(cacheKey, payload)
+              return payload
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Wiki Desc Error]:', err.message)
+  }
+
+  return null
 }
 
 /**
@@ -51,7 +275,6 @@ function matchNumericOperator(cardValue, filterStr) {
 
 /**
  * Advanced search cards in catalog & YGOPRODeck API with filters.
- * Options: { query, name, fname, id, type, race, attribute, archetype, level, atk, def, scale, link, linkmarker, cardset, banlist, format, staple, sort }
  */
 export async function searchCardsAdvanced(options = {}, maxResults = 35) {
   const opts = typeof options === 'string' ? { query: options } : options
@@ -88,200 +311,194 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
   const cleanArchetype = (archetype || '').trim().toLowerCase()
   const cleanSet = (cardset || '').trim().toLowerCase()
 
+  const parsedSetQuery = parseSetCode(rawQuery)
+
   const catalog = getCardsCatalog()
-  const results = []
 
-  // 1. Search local cards.json catalog first
-  for (const card of catalog) {
-    // ID match
-    if (cleanId && String(card.id).toLowerCase() !== cleanId) continue
+  function performLocalSearch(queryStr, translatedFromStr = null) {
+    const searchLower = queryStr.toLowerCase().trim()
+    const normSearch = searchLower.replace(/[^a-z0-9]/g, '')
+    const searchParsedSet = parseSetCode(searchLower)
+    const tokens = getSearchTokens(searchLower, translatedFromStr ? queryStr : '')
 
-    // Name match
-    if (cleanName && card.name && !cleanName.split('|').some((n) => card.name.toLowerCase().includes(n.trim()))) {
-      continue
-    }
+    const localResults = []
 
-    let relevanceScore = 0
-    let matchedSetCode = null
+    for (const card of catalog) {
+      // ID match
+      if (cleanId && String(card.id).toLowerCase() !== cleanId) continue
 
-    // Query text match (name, id, or set code)
-    if (cleanQuery) {
-      const cName = (card.name || '').toLowerCase()
-      const cId = String(card.id).toLowerCase()
+      // Name match
+      if (cleanName && card.name && !cleanName.split('|').some((n) => card.name.toLowerCase().includes(n.trim()))) {
+        continue
+      }
 
-      const isExactName = cName === cleanQuery
-      const isStartName = cName.startsWith(cleanQuery)
-      const isIncludesName = cName.includes(cleanQuery)
-      const isIdMatch = cId === cleanQuery || cId.includes(cleanQuery)
+      let relevanceScore = 0
+      let matchedSetCode = null
 
-      let setCodeMatchScore = 0
-      if (card.card_sets) {
-        for (const s of card.card_sets) {
-          const sCode = (s.set_code || '').toLowerCase()
-          const sNormCode = sCode.replace(/[^a-z0-9]/g, '')
-          const sName = (s.set_name || '').toLowerCase()
+      if (searchLower) {
+        const cName = (card.name || '').toLowerCase()
+        const normCName = cName.replace(/[^a-z0-9]/g, '')
+        const cId = String(card.id).toLowerCase()
+        const sets = card.card_sets || []
 
-          if (sCode === cleanQuery || (normQuery.length >= 3 && sNormCode === normQuery)) {
-            setCodeMatchScore = 400
+        let matchesCode = false
+        if (cName === searchLower) {
+          relevanceScore += 1000
+          matchesCode = true
+        } else if (cName.includes(searchLower) || (normSearch.length >= 3 && normCName.includes(normSearch))) {
+          relevanceScore += 500
+          matchesCode = true
+        } else if (cId === searchLower) {
+          relevanceScore += 900
+          matchesCode = true
+        }
+
+        // Token match (e.g. gamba -> shrimp)
+        if (!matchesCode && tokens.length > 0) {
+          for (const token of tokens) {
+            if (cName.includes(token) || normCName.includes(token)) {
+              relevanceScore += 400
+              matchesCode = true
+              break
+            }
+          }
+        }
+
+        // Set code match
+        for (const s of sets) {
+          if (!s || !s.set_code) continue
+          const sCode = s.set_code.toLowerCase().trim()
+          const normSCode = sCode.replace(/[^a-z0-9]/g, '')
+
+          if (sCode === searchLower) {
+            relevanceScore += 800
             matchedSetCode = s.set_code
+            matchesCode = true
             break
-          } else if (sCode.includes(cleanQuery) || (normQuery.length >= 3 && sNormCode.includes(normQuery))) {
-            if (setCodeMatchScore < 250) {
-              setCodeMatchScore = 250
-              matchedSetCode = s.set_code
+          } else if (sCode.includes(searchLower) || (normSearch.length >= 3 && normSCode.includes(normSearch))) {
+            relevanceScore += 400
+            matchedSetCode = s.set_code
+            matchesCode = true
+            break
+          }
+
+          // Regional set code equivalence (e.g. INFO-SP088 or INFO-SP08 vs INFO-EN088)
+          const parsedCardSet = parseSetCode(s.set_code)
+          if (searchParsedSet && parsedCardSet) {
+            if (searchParsedSet.setPrefix === parsedCardSet.setPrefix) {
+              if (!searchParsedSet.num || (parsedCardSet.num && parsedCardSet.num.includes(searchParsedSet.num))) {
+                relevanceScore += 750
+                matchedSetCode = (searchParsedSet.isRegional ? searchParsedSet.originalCode : s.set_code)
+                matchesCode = true
+                break
+              }
             }
-          } else if (sName.includes(cleanQuery)) {
-            if (setCodeMatchScore < 50) {
-              setCodeMatchScore = 50
-              if (!matchedSetCode) matchedSetCode = s.set_code
+          }
+          if (parsedSetQuery && parsedCardSet) {
+            if (parsedSetQuery.setPrefix === parsedCardSet.setPrefix) {
+              if (!parsedSetQuery.num || (parsedCardSet.num && parsedCardSet.num.includes(parsedSetQuery.num))) {
+                relevanceScore += 750
+                matchedSetCode = (parsedSetQuery.isRegional ? parsedSetQuery.originalCode : s.set_code)
+                matchesCode = true
+                break
+              }
             }
           }
         }
+
+        if (!matchesCode) continue
       }
 
-      if (!isIncludesName && !isIdMatch && setCodeMatchScore === 0) continue
+      // Type filter
+      if (cleanType && card.type && !card.type.toLowerCase().includes(cleanType)) continue
 
-      if (isExactName) relevanceScore += 1000
-      else if (isStartName) relevanceScore += 800
-      else if (isIncludesName) relevanceScore += 600
+      // Race filter
+      if (cleanRace && card.race && card.race.toLowerCase() !== cleanRace) continue
 
-      if (isIdMatch) relevanceScore += (cId === cleanQuery ? 700 : 500)
-      relevanceScore += setCodeMatchScore
-    }
+      // Attribute filter
+      if (cleanAttribute && card.attribute && card.attribute.toLowerCase() !== cleanAttribute) continue
 
-    // Type match
-    if (cleanType) {
-      const cType = (card.type || '').toLowerCase()
-      const cHuman = (card.humanReadableCardType || '').toLowerCase()
-      const types = cleanType.split(',').map((t) => t.trim())
-      const typeMatches = types.some((t) => cType.includes(t) || cHuman.includes(t))
-      if (!typeMatches) continue
-    }
+      // Archetype filter
+      if (cleanArchetype && card.archetype && !card.archetype.toLowerCase().includes(cleanArchetype)) continue
 
-    // Race match
-    if (cleanRace) {
-      const cRace = (card.race || '').toLowerCase()
-      const races = cleanRace.split(',').map((r) => r.trim())
-      if (!races.some((r) => cRace.includes(r))) continue
-    }
+      // Level / Rank filter
+      if (level && !matchNumericOperator(card.level || card.rank, level)) continue
 
-    // Attribute match
-    if (cleanAttribute) {
-      const cAttr = (card.attribute || '').toLowerCase()
-      const attributes = cleanAttribute.split(',').map((a) => a.trim())
-      if (!attributes.some((a) => cAttr.includes(a))) continue
-    }
+      // ATK filter
+      if (atk && !matchNumericOperator(card.atk, atk)) continue
 
-    // Archetype match
-    if (cleanArchetype) {
-      const cArch = (card.archetype || '').toLowerCase()
-      if (!cArch.includes(cleanArchetype)) continue
-    }
+      // DEF filter
+      if (def && !matchNumericOperator(card.def, def)) continue
 
-    // Level / Rank numeric operators match
-    if (level && !matchNumericOperator(card.level || card.rank, level)) continue
-
-    // ATK numeric operators match
-    if (atk && !matchNumericOperator(card.atk, atk)) continue
-
-    // DEF numeric operators match
-    if (def && !matchNumericOperator(card.def, def)) continue
-
-    // Cardset match
-    if (cleanSet) {
-      let setMatch = false
-      if (card.card_sets) {
-        for (const s of card.card_sets) {
-          if (
-            (s.set_code && s.set_code.toLowerCase().includes(cleanSet)) ||
-            (s.set_name && s.set_name.toLowerCase().includes(cleanSet))
-          ) {
-            setMatch = true
-            break
-          }
-        }
+      // Set filter
+      if (cleanSet) {
+        const hasSet = (card.card_sets || []).some((s) => s.set_name && s.set_name.toLowerCase().includes(cleanSet))
+        if (!hasSet) continue
       }
-      if (!setMatch) continue
+
+      const sets = card.card_sets || []
+      localResults.push({
+        id: String(card.id),
+        name: card.name,
+        type: card.type,
+        humanReadableCardType: card.humanReadableCardType || card.type,
+        race: card.race,
+        attribute: card.attribute,
+        archetype: card.archetype,
+        level: card.level || card.rank || null,
+        atk: card.atk,
+        def: card.def,
+        desc: card.desc || card.description || '',
+        imageSmall: card.card_images?.[0]?.image_url_small || '',
+        imageFull: card.card_images?.[0]?.image_url || '',
+        card_sets: sets,
+        matchedSetCode: matchedSetCode || (sets[0] ? sets[0].set_code : null),
+        relevanceScore,
+        translatedFrom: translatedFromStr,
+        isExternal: false,
+      })
     }
 
-    // Determine default matched set code if not yet assigned
-    if (!matchedSetCode && card.card_sets && card.card_sets.length > 0) {
-      matchedSetCode = card.card_sets[0].set_code
+    localResults.sort((a, b) => b.relevanceScore - a.relevanceScore)
+    return localResults
+  }
+
+  let localResults = performLocalSearch(cleanQuery)
+
+  // 2. If 0 local results and query is Spanish, attempt Spanish Wiki translation
+  let translatedFrom = null
+  if (localResults.length === 0 && cleanQuery.length >= 2 && !parsedSetQuery?.isRegional) {
+    const translatedQuery = await translateEsToEn(cleanQuery)
+    if (translatedQuery && translatedQuery.toLowerCase() !== cleanQuery) {
+      console.log(`[CardSearch] Retrying local search with translated query: "${translatedQuery}"`)
+      localResults = performLocalSearch(translatedQuery, rawQuery)
+      if (localResults.length > 0) {
+        translatedFrom = rawQuery
+      }
     }
-
-    results.push({
-      id: String(card.id),
-      name: card.name,
-      type: card.type,
-      humanReadableCardType: card.humanReadableCardType || card.type,
-      race: card.race,
-      attribute: card.attribute,
-      archetype: card.archetype,
-      level: card.level || card.rank || null,
-      atk: card.atk,
-      def: card.def,
-      desc: card.desc || card.description || '',
-      scale: card.scale || null,
-      linkval: card.linkval || null,
-      linkmarkers: card.linkmarkers || [],
-      imageSmall: card.card_images?.[0]?.image_url_small || '',
-      imageFull: card.card_images?.[0]?.image_url || '',
-      card_sets: card.card_sets || [],
-      matchedSetCode,
-      relevanceScore,
-      isExternal: false,
-    })
   }
 
-  // Sort local results by relevance score if query provided
-  if (cleanQuery && results.length > 0) {
-    results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0))
-  }
+  const cappedResults = localResults.slice(0, maxResults)
 
-  // Cap results to maxResults
-  const cappedResults = results.slice(0, maxResults)
-
-  // 2. If no local results or if advanced criteria provided, check YGOPRODeck API
-  if (cappedResults.length === 0) {
+  // 3. Fallback to YGOPRODeck API if no local results
+  if (cappedResults.length === 0 && (rawQuery || cleanName || cleanId)) {
     try {
-      const queryParams = new URLSearchParams()
-      if (name) {
-        queryParams.append('name', name)
-      } else if (cleanQuery) {
-        if (/^\d+$/.test(cleanQuery)) {
-          queryParams.append('id', cleanQuery)
-        } else {
-          queryParams.append('fname', cleanQuery)
-        }
-      } else if (fname) {
-        queryParams.append('fname', fname)
+      let searchQuery = cleanQuery
+      if (parsedSetQuery && parsedSetQuery.isRegional) {
+        searchQuery = parsedSetQuery.convertedCode
       }
 
-      if (id) queryParams.append('id', id)
-      if (type) queryParams.append('type', type)
-      if (race) queryParams.append('race', race)
-      if (attribute) queryParams.append('attribute', attribute)
-      if (archetype) queryParams.append('archetype', archetype)
-      if (level) queryParams.append('level', level)
-      if (atk) queryParams.append('atk', atk)
-      if (def) queryParams.append('def', def)
-      if (scale) queryParams.append('scale', scale)
-      if (link) queryParams.append('link', link)
-      if (linkmarker) queryParams.append('linkmarker', linkmarker)
-      if (cardset) queryParams.append('cardset', cardset)
-      if (banlist) queryParams.append('banlist', banlist)
-      if (format) queryParams.append('format', format)
-      if (staple) queryParams.append('staple', staple)
-      if (sort) queryParams.append('sort', sort)
+      let url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(searchQuery)}`
+      if (cleanId) {
+        url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${encodeURIComponent(cleanId)}`
+      } else if (parsedSetQuery && parsedSetQuery.isRegional) {
+        url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?cardset=${encodeURIComponent(parsedSetQuery.setPrefix)}`
+      }
 
-      const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?${queryParams.toString()}`
-
-      // Check in-memory API cache first
       let apiCards = null
       if (apiCache.has(url)) {
         const cachedEntry = apiCache.get(url)
         if (Date.now() - cachedEntry.timestamp < CACHE_TTL_MS) {
-          console.log(`[CardSearch] Returning cached API results for ${url}`)
           apiCards = cachedEntry.data
         }
       }
@@ -311,18 +528,16 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
             atk: card.atk,
             def: card.def,
             desc: card.desc || card.description || '',
-            scale: card.scale || null,
-            linkval: card.linkval || null,
-            linkmarkers: card.linkmarkers || [],
             imageSmall: card.card_images?.[0]?.image_url_small || '',
             imageFull: card.card_images?.[0]?.image_url || '',
             card_sets: sets,
             matchedSetCode: sets[0] ? sets[0].set_code : null,
+            translatedFrom,
             isExternal: true,
           }
           externalCardsCache.set(String(card.id), formatted)
-          results.push(formatted)
-          if (results.length >= maxResults) break
+          localResults.push(formatted)
+          if (localResults.length >= maxResults) break
         }
       }
     } catch (err) {
@@ -330,9 +545,8 @@ export async function searchCardsAdvanced(options = {}, maxResults = 35) {
     }
   }
 
-  const finalResults = cappedResults.length > 0 ? cappedResults : results
+  const finalResults = cappedResults.length > 0 ? cappedResults : localResults
 
-  // Sort results if sort option specified
   if (sort && finalResults.length > 0) {
     finalResults.sort((a, b) => {
       if (sort === 'name') return a.name.localeCompare(b.name)

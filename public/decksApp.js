@@ -386,10 +386,54 @@ async function fetchBinderDrawer() {
       userBinderItems = data.data
       renderDesktopBinderDrawer()
       renderMobileBinderDrawer()
+
+      const dSearch = (drawerSearchInput?.value || mobileDrawerSearch?.value || '').trim()
+      if (dSearch && dSearch.length >= 2) {
+        fetchSmartTranslationDecks(dSearch).then((res) => {
+          if (res) {
+            renderDesktopBinderDrawer()
+            renderMobileBinderDrawer()
+          }
+        })
+      }
     }
   } catch (err) {
     console.error('Error fetching binder drawer:', err)
   }
+}
+
+let drawerSearchDebounce = null
+const smartSearchCacheDecks = new Map()
+
+function parseSetCodeDecks(codeStr) {
+  if (!codeStr || typeof codeStr !== 'string') return null
+  const match = codeStr.trim().match(/^([a-z0-9]{2,6})[-_\s]?([a-z]{1,3})(\d{3,4})$/i)
+  if (!match) return null
+  return { setPrefix: match[1].toUpperCase(), num: match[3] }
+}
+
+async function fetchSmartTranslationDecks(queryStr) {
+  if (!queryStr || queryStr.length < 2) return null
+  const cacheKey = queryStr.toLowerCase().trim()
+  if (smartSearchCacheDecks.has(cacheKey)) return smartSearchCacheDecks.get(cacheKey)
+
+  try {
+    const res = await fetch(`${API_BASE}/inventory/translate?q=${encodeURIComponent(queryStr)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success) {
+        const payload = {
+          translated: (data.translated || '').toLowerCase().trim(),
+          tokens: (data.tokens || []).map((t) => t.toLowerCase().trim()),
+        }
+        smartSearchCacheDecks.set(cacheKey, payload)
+        return payload
+      }
+    }
+  } catch (e) {}
+  return null
 }
 
 // Render Desktop Binder Drawer
@@ -406,13 +450,79 @@ function renderMobileBinderDrawer() {
   renderBinderItemsList(mobileDrawerBinderList, search)
 }
 
+// Attach input listeners for live smart translation search in Decks Drawer
+drawerSearchInput?.addEventListener('input', () => {
+  renderDesktopBinderDrawer()
+  clearTimeout(drawerSearchDebounce)
+  drawerSearchDebounce = setTimeout(async () => {
+    const query = (drawerSearchInput.value || '').trim()
+    if (query && query.length >= 2) {
+      const translated = await fetchSmartTranslationDecks(query)
+      if (translated) {
+        renderDesktopBinderDrawer()
+      }
+    }
+  }, 200)
+})
+
+mobileDrawerSearch?.addEventListener('input', () => {
+  renderMobileBinderDrawer()
+  clearTimeout(drawerSearchDebounce)
+  drawerSearchDebounce = setTimeout(async () => {
+    const query = (mobileDrawerSearch.value || '').trim()
+    if (query && query.length >= 2) {
+      const translated = await fetchSmartTranslationDecks(query)
+      if (translated) {
+        renderMobileBinderDrawer()
+      }
+    }
+  }, 200)
+})
+
 // Shared Renderer for Binder Drawer Cards (Matching Mockup Screenshot)
 function renderBinderItemsList(containerEl, searchFilter) {
+  const cleanSearch = (searchFilter || '').trim().toLowerCase()
+  const normSearch = cleanSearch.replace(/[^a-z0-9]/g, '')
+  const smartInfo = smartSearchCacheDecks.get(cleanSearch) || { translated: '', tokens: [] }
+  const translatedSearch = smartInfo.translated || ''
+  const searchTokens = smartInfo.tokens || []
+  const normTranslated = translatedSearch.replace(/[^a-z0-9]/g, '')
+  const parsedSearchSet = parseSetCodeDecks(cleanSearch)
+
   const filtered = userBinderItems.filter(item => {
-    return !searchFilter ||
-      (item.card_name && item.card_name.toLowerCase().includes(searchFilter)) ||
-      (item.card_code && item.card_code.toLowerCase().includes(searchFilter)) ||
-      (item.set_name && item.set_name.toLowerCase().includes(searchFilter))
+    if (!cleanSearch) return true
+
+    const cardName = (item.card_name || '').toLowerCase()
+    const normCardName = cardName.replace(/[^a-z0-9]/g, '')
+    const cardCode = (item.card_code || '').toLowerCase()
+    const parsedCardCode = parseSetCodeDecks(cardCode)
+    const setName = (item.set_name || '').toLowerCase()
+
+    let matchesSetEquivalence = false
+    if (parsedSearchSet && parsedCardCode) {
+      if (parsedSearchSet.setPrefix === parsedCardCode.setPrefix && parsedSearchSet.num === parsedCardCode.num) {
+        matchesSetEquivalence = true
+      }
+    }
+
+    const matchesDirect = cardName.includes(cleanSearch) ||
+      cardCode.includes(cleanSearch) ||
+      setName.includes(cleanSearch) ||
+      (normSearch.length >= 3 && normCardName.includes(normSearch))
+
+    const matchesTranslation = translatedSearch && (
+      cardName.includes(translatedSearch) ||
+      cardCode.includes(translatedSearch) ||
+      (normTranslated.length >= 3 && normCardName.includes(normTranslated))
+    )
+
+    const matchesTokens = searchTokens.some((token) => token && (
+      cardName.includes(token) ||
+      normCardName.includes(token) ||
+      cardCode.includes(token)
+    ))
+
+    return matchesDirect || matchesSetEquivalence || matchesTranslation || matchesTokens
   })
 
   containerEl.innerHTML = ''
@@ -742,12 +852,18 @@ editorEditMetaBtn?.addEventListener('click', async () => {
 })
 
 editorDeleteDeckBtn?.addEventListener('click', () => {
-  if (currentDeck) deleteDeck(currentDeck.id)
+    if (currentDeck) deleteDeck(currentDeck.id)
 })
 
 decksSearchInput?.addEventListener('input', renderDecksGallery)
 drawerSearchInput?.addEventListener('input', renderDesktopBinderDrawer)
 mobileDrawerSearch?.addEventListener('input', renderMobileBinderDrawer)
+
+let isShowingSpanishDescDecks = false
+let currentEnglishTitleDecks = ''
+let currentEnglishDescDecks = ''
+let currentSpanishTitleDecks = ''
+let currentSpanishDescDecks = ''
 
 // Card Zoom Modal Functions
 function openCardZoomModal(item) {
@@ -757,13 +873,15 @@ function openCardZoomModal(item) {
   const zoomCardTitle = document.getElementById('zoomCardTitle')
   const zoomCardMeta = document.getElementById('zoomCardMeta')
   const zoomCardDesc = document.getElementById('zoomCardDesc')
+  const toggleDescLangBtn = document.getElementById('toggleDescLangBtn')
 
   if (!cardZoomModal || !zoomCardImg) return
 
   const imgUrl = item.imageFull || item.card_images?.[0]?.image_url || item.imageSmall || item.card_images?.[0]?.image_url_small || item.image_url || ''
   zoomCardImg.src = imgUrl
 
-  if (zoomCardTitle) zoomCardTitle.textContent = item.card_name || item.name || 'Carta Yu-Gi-Oh!'
+  currentEnglishTitleDecks = item.card_name || item.name || 'Carta Yu-Gi-Oh!'
+  if (zoomCardTitle) zoomCardTitle.textContent = currentEnglishTitleDecks
   
   const typeStr = item.humanReadableCardType || item.card_type || item.type || ''
   const attrStr = item.attribute ? ` · ${item.attribute}` : ''
@@ -778,7 +896,53 @@ function openCardZoomModal(item) {
   if (!cardDesc) {
     cardDesc = 'Sin descripción disponible.'
   }
-  if (zoomCardDesc) zoomCardDesc.textContent = cardDesc
+
+  currentEnglishDescDecks = cardDesc
+  currentSpanishTitleDecks = ''
+  currentSpanishDescDecks = ''
+  isShowingSpanishDescDecks = false
+
+  if (zoomCardDesc) zoomCardDesc.textContent = currentEnglishDescDecks
+
+  if (toggleDescLangBtn) {
+    toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+    toggleDescLangBtn.onclick = async () => {
+      if (!isShowingSpanishDescDecks) {
+        if (!currentSpanishDescDecks) {
+          toggleDescLangBtn.textContent = '⏳ Buscando en Wiki Español...'
+          try {
+            const res = await fetch(`${API_BASE}/inventory/description?name=${encodeURIComponent(currentEnglishTitleDecks)}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (res.ok) {
+              const data = await res.json()
+              if (data.success && data.spanishDesc) {
+                currentSpanishTitleDecks = data.spanishName || currentEnglishTitleDecks
+                currentSpanishDescDecks = data.spanishDesc
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (currentSpanishDescDecks) {
+          if (zoomCardTitle) zoomCardTitle.textContent = currentSpanishTitleDecks
+          zoomCardDesc.textContent = currentSpanishDescDecks
+          isShowingSpanishDescDecks = true
+          toggleDescLangBtn.textContent = '🇬🇧 Ver en Inglés'
+        } else {
+          toggleDescLangBtn.textContent = '❌ Sin traducción en Wiki'
+          setTimeout(() => {
+            toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+          }, 2000)
+        }
+      } else {
+        if (zoomCardTitle) zoomCardTitle.textContent = currentEnglishTitleDecks
+        zoomCardDesc.textContent = currentEnglishDescDecks
+        isShowingSpanishDescDecks = false
+        toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+      }
+    }
+  }
 
   if (closeCardZoomModalBtn) closeCardZoomModalBtn.onclick = () => cardZoomModal.classList.add('hidden')
   cardZoomModal.onclick = (e) => {

@@ -7,7 +7,7 @@ import {
   updateInventoryCard,
   deleteInventoryCard,
 } from './inventoryModel.js'
-import { searchCardsByName, searchCardsAdvanced, findCardById } from './cardSearch.js'
+import { searchCardsByName, searchCardsAdvanced, findCardById, parseSetCode, translateEsToEn, getSearchTokens, fetchSpanishDescription } from './cardSearch.js'
 import { getInventoryCardAvailability } from '../decks/deckModel.js'
 
 const router = Router()
@@ -42,6 +42,52 @@ router.get('/search', async (req, res) => {
   } catch (err) {
     console.error('Error in card search API:', err)
     res.status(500).json({ success: false, error: 'Error en la búsqueda de cartas.' })
+  }
+})
+
+// GET /api/inventory/translate - Translate Spanish queries & set codes for all search inputs
+router.get('/translate', async (req, res) => {
+  try {
+    const q = (req.query.q || req.query.query || '').trim()
+    if (!q) {
+      return res.json({ success: true, original: '', translated: '', tokens: [], isSetCode: false })
+    }
+    const parsedSet = parseSetCode(q)
+    if (parsedSet && parsedSet.isRegional) {
+      return res.json({
+        success: true,
+        original: q,
+        translated: parsedSet.convertedCode,
+        baseCode: parsedSet.baseCode,
+        tokens: [parsedSet.convertedCode.toLowerCase(), parsedSet.baseCode.toLowerCase()],
+        isSetCode: true,
+      })
+    }
+    const translated = await translateEsToEn(q)
+    const tokens = getSearchTokens(q, translated)
+    res.json({ success: true, original: q, translated, tokens, isSetCode: false })
+  } catch (err) {
+    console.error('Error in translate API:', err)
+    res.status(500).json({ success: false, error: 'Error en traducción.' })
+  }
+})
+
+// GET /api/inventory/description - Fetch official Spanish card description & title from Yu-Gi-Oh! Wiki
+router.get('/description', async (req, res) => {
+  try {
+    const name = (req.query.name || req.query.q || '').trim()
+    if (!name) {
+      return res.json({ success: true, name: '', spanishName: null, spanishDesc: null })
+    }
+    const info = await fetchSpanishDescription(name)
+    if (info) {
+      res.json({ success: true, name, spanishName: info.spanishName, spanishDesc: info.spanishDesc })
+    } else {
+      res.json({ success: true, name, spanishName: null, spanishDesc: null })
+    }
+  } catch (err) {
+    console.error('Error fetching Spanish description:', err)
+    res.status(500).json({ success: false, error: 'Error al obtener la descripción en español.' })
   }
 })
 
@@ -107,7 +153,8 @@ router.get('/', async (req, res) => {
           ...formatEnrichedItem(item, cardDetails),
           assigned_copies: availability.assigned_copies,
           available_quantity: availability.available_quantity,
-          location_summary: availability.location_summary
+          location_summary: availability.location_summary,
+          assignments: availability.assignments || []
         }
       })
     )
