@@ -12,28 +12,7 @@ import { getInventoryCardAvailability } from '../decks/deckModel.js'
 
 const router = Router()
 
-// All inventory endpoints require authentication
-router.use(authMiddleware)
-
-function formatEnrichedItem(item, cardDetails = {}) {
-  return {
-    ...item,
-    card_name: cardDetails.name || 'Carta desconocida',
-    card_type: cardDetails.type || '',
-    humanReadableCardType: cardDetails.humanReadableCardType || cardDetails.type || '',
-    attribute: cardDetails.attribute || '',
-    race: cardDetails.race || '',
-    desc: cardDetails.desc || cardDetails.description || '',
-    archetype: cardDetails.archetype || '',
-    level: cardDetails.level || null,
-    atk: cardDetails.atk !== undefined ? cardDetails.atk : null,
-    def: cardDetails.def !== undefined ? cardDetails.def : null,
-    imageSmall: cardDetails.imageSmall || '',
-    imageFull: cardDetails.imageFull || '',
-    card_sets: cardDetails.card_sets || [],
-  }
-}
-
+// Public catalog routes (do not require auth)
 // GET /api/inventory/search - Search catalog with all advanced filters & YGOPRODeck fallback
 router.get('/search', async (req, res) => {
   try {
@@ -90,6 +69,28 @@ router.get('/description', async (req, res) => {
     res.status(500).json({ success: false, error: 'Error al obtener la descripción en español.' })
   }
 })
+
+// All inventory endpoints below require authentication
+router.use(authMiddleware)
+
+function formatEnrichedItem(item, cardDetails = {}) {
+  return {
+    ...item,
+    card_name: cardDetails.name || 'Carta desconocida',
+    card_type: cardDetails.type || '',
+    humanReadableCardType: cardDetails.humanReadableCardType || cardDetails.type || '',
+    attribute: cardDetails.attribute || '',
+    race: cardDetails.race || '',
+    desc: cardDetails.desc || cardDetails.description || '',
+    archetype: cardDetails.archetype || '',
+    level: cardDetails.level || null,
+    atk: cardDetails.atk !== undefined ? cardDetails.atk : null,
+    def: cardDetails.def !== undefined ? cardDetails.def : null,
+    imageSmall: cardDetails.imageSmall || '',
+    imageFull: cardDetails.imageFull || '',
+    card_sets: cardDetails.card_sets || [],
+  }
+}
 
 // GET /api/inventory/export-ydk - Export user's binder to YDK text format
 router.get('/export-ydk', async (req, res) => {

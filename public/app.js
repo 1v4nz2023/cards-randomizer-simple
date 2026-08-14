@@ -13,6 +13,11 @@ const mainCountEl = document.getElementById('mainCount')
 const extraCountEl = document.getElementById('extraCount')
 
 let currentDeckData = null
+let currentEnglishTitle = ''
+let currentEnglishDesc = ''
+let currentSpanishTitle = ''
+let currentSpanishDesc = ''
+let isShowingSpanishDesc = false
 
 generateBtn.addEventListener('click', async () => {
   hide(errorEl)
@@ -95,6 +100,7 @@ function showCardModal(card) {
   const zoomCardTitle = document.getElementById('zoomCardTitle')
   const zoomCardMeta = document.getElementById('zoomCardMeta')
   const zoomCardDesc = document.getElementById('zoomCardDesc')
+  const toggleDescLangBtn = document.getElementById('toggleDescLangBtn')
 
   if (!cardZoomModal || !zoomCardImg) {
     console.error('cardZoomModal not found in DOM')
@@ -104,7 +110,8 @@ function showCardModal(card) {
   const imgUrl = card.imageFull || card.card_images?.[0]?.image_url || card.imageSmall || card.card_images?.[0]?.image_url_small || card.image_url || ''
   zoomCardImg.src = imgUrl
 
-  if (zoomCardTitle) zoomCardTitle.textContent = card.name || card.card_name || 'Carta Yu-Gi-Oh!'
+  currentEnglishTitle = card.name || card.card_name || 'Carta Yu-Gi-Oh!'
+  if (zoomCardTitle) zoomCardTitle.textContent = currentEnglishTitle
   
   const typeStr = card.humanReadableCardType || card.type || card.card_type || ''
   const attrStr = card.attribute ? ` · ${card.attribute}` : ''
@@ -113,7 +120,56 @@ function showCardModal(card) {
   const defStr = card.def !== undefined && card.def !== null ? ` DEF/${card.def}` : ''
   if (zoomCardMeta) zoomCardMeta.textContent = `${typeStr}${attrStr}${raceStr}${atkStr}${defStr}`
 
-  if (zoomCardDesc) zoomCardDesc.textContent = card.desc || card.description || card.notes || 'Sin descripción disponible.'
+  currentEnglishDesc = card.desc || card.description || card.notes || 'Sin descripción disponible.'
+  currentSpanishTitle = ''
+  currentSpanishDesc = ''
+  isShowingSpanishDesc = false
+
+  if (zoomCardDesc) zoomCardDesc.textContent = currentEnglishDesc
+
+  if (toggleDescLangBtn) {
+    toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+    toggleDescLangBtn.onclick = async () => {
+      if (!isShowingSpanishDesc) {
+        if (!currentSpanishDesc) {
+          toggleDescLangBtn.textContent = '⏳ Buscando en Wiki Español...'
+          try {
+            const token = localStorage.getItem('ygo_token')
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+            const res = await fetch(`${API_BASE}/inventory/description?name=${encodeURIComponent(currentEnglishTitle)}`, {
+              headers
+            })
+            if (res.ok) {
+              const data = await res.json()
+              if (data.success && data.spanishDesc) {
+                currentSpanishTitle = data.spanishName || currentEnglishTitle
+                currentSpanishDesc = data.spanishDesc
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Spanish description:', e)
+          }
+        }
+
+        if (currentSpanishDesc) {
+          if (zoomCardTitle) zoomCardTitle.textContent = currentSpanishTitle
+          zoomCardDesc.textContent = currentSpanishDesc
+          isShowingSpanishDesc = true
+          toggleDescLangBtn.textContent = '🇬🇧 Ver en Inglés'
+        } else {
+          toggleDescLangBtn.textContent = '❌ Sin traducción en Wiki'
+          setTimeout(() => {
+            toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+          }, 2000)
+        }
+      } else {
+        if (zoomCardTitle) zoomCardTitle.textContent = currentEnglishTitle
+        zoomCardDesc.textContent = currentEnglishDesc
+        isShowingSpanishDesc = false
+        toggleDescLangBtn.textContent = '🌐 Traducir al Español'
+      }
+    }
+  }
 
   if (closeCardZoomModalBtn) closeCardZoomModalBtn.onclick = () => cardZoomModal.classList.add('hidden')
   cardZoomModal.onclick = (e) => {
